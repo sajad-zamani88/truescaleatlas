@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="en" data-theme="ocean">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrueScale Atlas — Compare Country Sizes Without Mercator Distortion</title>
+  <meta name="description" content="TrueScale Atlas is a free interactive map builder. Drag countries across the globe, correct Mercator distortion, compare real areas, save comparisons, and export PNG, SVG, JSON, or a standalone HTML page." />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="theme-color" content="#061826" />
+  <link rel="canonical" href="./" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="TrueScale Atlas — See Countries at Their True Size" />
+  <meta property="og:description" content="Drag, rotate, and compare countries on a distortion-aware world map. Free, open data, no API key, export-ready." />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TrueScale Atlas — True Country Size Comparison" />
+  <meta name="twitter:description" content="A free, accessible, SEO-ready country size comparison builder with live controls and exports." />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5/index.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/space-grotesk@5/index.css" />
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {
+        "@type":"WebApplication",
+        "name":"TrueScale Atlas",
+        "applicationCategory":"EducationalApplication",
+        "operatingSystem":"Web",
+        "description":"Interactive country size comparison builder that corrects Mercator distortion using spherical geometry.",
+        "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+        "featureList":["Drag countries across latitudes","True-area spherical correction","Rotate and style layers","Save and share comparisons","Export PNG, SVG, JSON, HTML"],
+        "inLanguage":"en"
+      },
+      {
+        "@type":"HowTo",
+        "name":"How to compare country sizes accurately",
+        "step":[
+          {"@type":"HowToStep","name":"Add countries","text":"Search for countries or use quick presets to add them to the map."},
+          {"@type":"HowToStep","name":"Move and rotate","text":"Drag a country to a new latitude or use the builder sliders. True-size mode preserves spherical area."},
+          {"@type":"HowToStep","name":"Compare and export","text":"Read the area ratio, save the comparison, or export an image, data file, or standalone page."}
+        ]
+      },
+      {
+        "@type":"FAQPage",
+        "mainEntity":[
+          {"@type":"Question","name":"Why does Greenland look as large as Africa on many maps?","acceptedAnswer":{"@type":"Answer","text":"The Mercator projection stretches areas near the poles. Greenland appears huge, but Africa is about 14 times larger in real area."}},
+          {"@type":"Question","name":"How does TrueScale Atlas keep country sizes accurate?","acceptedAnswer":{"@type":"Answer","text":"Country outlines are rotated on a sphere before being projected, so their spherical area stays constant while their Mercator appearance changes with latitude."}},
+          {"@type":"Question","name":"Are the area numbers official statistics?","acceptedAnswer":{"@type":"Answer","text":"No. Areas are computed from Natural Earth 1:110m public-domain boundaries and are intended for education and visual comparison, not legal or survey use."}},
+          {"@type":"Question","name":"Do I need an API key?","acceptedAnswer":{"@type":"Answer","text":"No. The app uses open CDN libraries and public-domain Natural Earth data. Everything runs in the browser."}},
+          {"@type":"Question","name":"Can I upload the exported file to my host?","acceptedAnswer":{"@type":"Answer","text":"Yes. Export a standalone HTML snapshot or host this single index.html file on any static host."}}
+        ]
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root{
+      --ocean-950:#03101c; --ocean-900:#061826; --ocean-850:#082033; --ocean-800:#0b2a42; --ocean-700:#123a58;
+      --cyan:#22d3ee; --blue:#3b82f6; --amber:#f59e0b; --coral:#ff5a5f; --lime:#a3e635; --magenta:#e879f9; --violet:#8b5cf6; --teal:#2dd4bf;
+      --success:#34d399; --warning:#fbbf24; --danger:#fb7185; --info:#60a5fa;
+      --bg:var(--ocean-950); --surface:#071c2e; --surface-2:#0a2438; --overlay:#0d2c44; --scrim:rgba(2,10,18,.72);
+      --text:#e8f1f8; --muted:#9db4c8; --line:#1c3b55; --line-strong:#2b5273;
+      --land:#123049; --land-line:#2c5675; --grat:#2dd4bf; --map-text:#dff6ff;
+      --radius:18px; --radius-sm:12px; --header-h:66px;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+      --font-body:"Inter Variable",Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      --font-display:"Space Grotesk Variable","Space Grotesk",Inter,system-ui,sans-serif;
+    }
+    :root[data-theme="midnight"]{
+      --bg:#050510; --surface:#0b0b1e; --surface-2:#121230; --overlay:#191940; --scrim:rgba(3,3,12,.78);
+      --text:#ecebff; --muted:#a7a4c8; --line:#262650; --line-strong:#3b3b78;
+      --land:#17173a; --land-line:#3a3a72; --grat:#8b5cf6; --map-text:#efeaff;
+    }
+    :root[data-theme="paper"]{
+      --bg:#f3eee3; --surface:#fbf7ee; --surface-2:#f1e9d8; --overlay:#ffffff; --scrim:rgba(40,32,18,.45);
+      --text:#1d2733; --muted:#5c6b7a; --line:#d8cdb8; --line-strong:#b9a98c;
+      --land:#e5dcc8; --land-line:#b6a687; --grat:#0f766e; --map-text:#1d2733;
+      --cyan:#0e7490; --blue:#1d4ed8; --amber:#b45309; --coral:#dc2626; --lime:#4d7c0f; --magenta:#a21caf; --violet:#6d28d9; --teal:#0f766e;
+      --success:#047857; --warning:#b45309; --danger:#be123c; --info:#1d4ed8;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body);
+      line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    }
+    body::before{
+      content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+      background:
+        radial-gradient(900px 520px at 12% -8%, rgba(34,211,238,.16), transparent 60%),
+        radial-gradient(760px 520px at 92% 4%, rgba(139,92,246,.14), transparent 62%),
+        radial-gradient(700px 600px at 55% 110%, rgba(245,158,11,.10), transparent 60%),
+        linear-gradient(180deg,var(--bg),var(--bg));
+    }
+    body::after{
+      content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    ::selection{background:rgba(34,211,238,.35)}
+    a{color:var(--cyan)}
+    img,svg{max-width:100%}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    :focus-visible{outline:3px solid var(--cyan); outline-offset:2px; border-radius:8px}
+    .skip-link{position:absolute;left:-999px;top:8px;z-index:1000;background:var(--cyan);color:#04121f;padding:10px 14px;border-radius:10px;font-weight:700}
+    .skip-link:focus{left:12px}
+    *{scrollbar-width:thin;scrollbar-color:var(--line-strong) var(--surface)}
+    *::-webkit-scrollbar{width:10px;height:10px}
+    *::-webkit-scrollbar-track{background:var(--surface);border-radius:99px}
+    *::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--cyan),var(--blue));border-radius:99px;border:2px solid var(--surface)}
+    *::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--amber),var(--coral))}
+
+    .site-header{
+      position:fixed; inset:0 0 auto 0; height:var(--header-h); z-index:50;
+      display:flex; align-items:center; gap:18px; padding:0 clamp(14px,3vw,34px);
+      background:var(--bg);
+      background:color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--line);
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;letter-spacing:.2px;color:var(--text);text-decoration:none;white-space:nowrap}
+    .brand-mark{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:conic-gradient(from 210deg,var(--cyan),var(--blue),var(--violet),var(--amber),var(--cyan));box-shadow:0 0 24px rgba(34,211,238,.35)}
+    .brand-mark svg{width:20px;height:20px}
+    .nav{display:flex;gap:6px;margin-left:auto;align-items:center}
+    .nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:.92rem;padding:8px 12px;border-radius:10px}
+    .nav a:hover,.nav a[aria-current="true"],.nav a[aria-current="page"]{color:var(--text);background:var(--surface-2)}
+    .btn{border:1px solid var(--line-strong);background:var(--surface-2);color:var(--text);padding:10px 14px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,0,0,.25)}
+    .btn:active{transform:translateY(0)}
+    .btn-primary{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#03101c;border-color:transparent}
+    .btn-amber{background:linear-gradient(135deg,var(--amber),var(--coral));color:#1a0b02;border-color:transparent}
+    .btn-ghost{background:transparent}
+    .btn-sm{padding:7px 10px;border-radius:10px;font-size:.85rem}
+    .btn-icon{width:38px;height:38px;padding:0;border-radius:11px}
+    .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+    /* mobile navigation */
+    .nav-toggle{display:none;flex:0 0 auto}
+    .nav-scrim{position:fixed;inset:var(--header-h) 0 0 0;z-index:48;background:var(--scrim);opacity:0;transition:opacity .22s ease;backdrop-filter:blur(2px)}
+    .nav-scrim.open{opacity:1}
+    .mobile-nav{
+      position:fixed;top:var(--header-h);left:0;right:0;z-index:49;
+      background:linear-gradient(180deg,var(--surface),var(--surface-2));
+      border-bottom:1px solid var(--line-strong);box-shadow:var(--shadow);
+      padding:12px clamp(14px,3vw,34px) 18px;
+      max-height:calc(100vh - var(--header-h));max-height:calc(100dvh - var(--header-h));overflow:auto;
+      opacity:0;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease;
+    }
+    .mobile-nav.open{opacity:1;transform:none}
+    .mobile-nav nav{display:flex;flex-direction:column;gap:4px}
+    .mnav-link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px;border-radius:12px;border:1px solid transparent;color:var(--text);text-decoration:none;font-weight:700}
+    .mnav-link small{color:var(--muted);font-weight:600;font-size:.76rem}
+    .mnav-link:hover,.mnav-link:focus-visible{background:var(--overlay);border-color:var(--line)}
+    .mnav-link[aria-current="page"]{background:var(--overlay);border-color:var(--line-strong);color:var(--cyan)}
+    .mobile-nav .btn{width:100%;margin-top:12px}
+    body.nav-open{overflow:hidden}
+    @media (min-width:721px){.mobile-nav,.nav-scrim{display:none!important}}
+
+    main{padding-top:var(--header-h)}
+    #top{scroll-margin-top:calc(var(--header-h) + 12px)}
+    section{scroll-margin-top:calc(var(--header-h) + 18px)}
+    #builder{scroll-margin-top:calc(var(--header-h) + 18px)}
+    .wrap{width:min(1440px,100% - 32px);margin-inline:auto}
+
+    .workspace{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;padding:22px 0 18px;align-items:start}
+    .map-card{position:relative;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);min-height:640px}
+    .map-topbar{position:absolute;z-index:6;top:12px;left:12px;right:12px;display:flex;gap:10px;align-items:center;pointer-events:none}
+    .map-topbar > *{pointer-events:auto}
+    .pill{background:var(--overlay);background:color-mix(in srgb,var(--overlay) 88%,transparent);border:1px solid var(--line-strong);border-radius:999px;padding:8px 12px;font-size:.82rem;color:var(--text);backdrop-filter:blur(8px);display:inline-flex;gap:8px;align-items:center}
+    .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 10px var(--success)}
+    .map-tools{margin-left:auto;display:flex;gap:8px}
+    #mapHolder{height:clamp(560px,74vh,860px);position:relative}
+    #mapSvg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+    #mapSvg.dragging{cursor:grabbing}
+    .country-layer{cursor:grab;transition:filter .15s ease}
+    .country-layer:hover{filter:brightness(1.12)}
+    .country-layer.selected{filter:drop-shadow(0 0 10px rgba(34,211,238,.55))}
+    .map-label{font-family:var(--font-display);font-weight:700;paint-order:stroke;stroke:var(--bg);stroke-width:4px;fill:var(--map-text);pointer-events:none}
+    .map-sublabel{font-family:var(--font-body);font-weight:600;paint-order:stroke;stroke:var(--bg);stroke-width:3px;fill:var(--muted);pointer-events:none}
+    .map-footer{position:absolute;left:12px;right:12px;bottom:12px;z-index:6;display:flex;gap:10px;align-items:flex-end;pointer-events:none}
+    .insight{pointer-events:auto;max-width:min(560px,70%);background:var(--overlay);background:color-mix(in srgb,var(--overlay) 90%,transparent);border:1px solid var(--line-strong);border-radius:16px;padding:12px 14px;backdrop-filter:blur(10px)}
+    .insight strong{color:var(--amber)}
+    .map-legend{margin-left:auto;pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .legend-chip{display:inline-flex;align-items:center;gap:7px;background:var(--overlay);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:.78rem}
+    .legend-swatch{width:10px;height:10px;border-radius:3px}
+    .loading{position:absolute;inset:0;display:grid;place-items:center;background:var(--scrim);z-index:8}
+    .loader{width:54px;height:54px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--cyan);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error-box{background:var(--surface-2);border:1px solid var(--danger);padding:18px;border-radius:16px;max-width:420px;text-align:center}
+
+    .builder{position:sticky;top:calc(var(--header-h) + 12px);max-height:calc(100vh - var(--header-h) - 24px);overflow:auto;background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:14px}
+    .builder h2{font-size:1.15rem;display:flex;align-items:center;gap:10px}
+    .builder h2 .badge{font-size:.7rem;background:rgba(34,211,238,.15);color:var(--cyan);border:1px solid rgba(34,211,238,.35);padding:3px 8px;border-radius:999px}
+    .panel{background:var(--surface);background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .panel-title{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 10px}
+    .search-row{display:flex;gap:8px;position:relative}
+    .input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line-strong);border-radius:12px;padding:10px 12px;color:var(--text)}
+    textarea{resize:vertical;min-height:70px}
+    .suggest{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;background:var(--overlay);border:1px solid var(--line-strong);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);display:none}
+    .suggest.open{display:block}
+    .suggest button{display:flex;width:100%;justify-content:space-between;gap:10px;background:transparent;border:0;padding:10px 12px;text-align:left;color:var(--text)}
+    .suggest button:hover,.suggest button.active{background:var(--surface-2)}
+    .suggest small{color:var(--muted)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{border:1px solid var(--line-strong);background:var(--surface-2);border-radius:999px;padding:6px 10px;font-size:.8rem;font-weight:700;color:var(--text)}
+    .chip:hover{border-color:var(--cyan);color:var(--cyan)}
+    .layer-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+    .layer-list{display:flex;flex-direction:column;gap:8px;max-height:230px;overflow:auto;padding-right:4px}
+    .layer-item{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px}
+    .layer-item.selected{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(34,211,238,.35)}
+    .layer-item .handle{cursor:grab;color:var(--muted)}
+    .layer-name{font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .layer-meta{font-size:.74rem;color:var(--muted)}
+    .layer-actions{display:flex;gap:4px}
+    .mini{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;padding:0}
+    .mini:hover{border-color:var(--cyan)}
+    .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .control{display:flex;flex-direction:column;gap:6px}
+    .control.full{grid-column:1/-1}
+    .control label{font-size:.78rem;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;gap:8px}
+    .control output{color:var(--cyan);font-variant-numeric:tabular-nums}
+    input[type="range"]{accent-color:var(--cyan);width:100%}
+    input[type="color"]{width:100%;height:38px;border:1px solid var(--line-strong);border-radius:10px;background:var(--bg);padding:3px}
+    .switch{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
+    .switch input{appearance:none;width:42px;height:24px;border-radius:999px;background:var(--line-strong);position:relative;cursor:pointer;transition:background .2s}
+    .switch input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}
+    .switch input:checked{background:linear-gradient(90deg,var(--cyan),var(--blue))}
+    .switch input:checked::after{left:21px}
+    .btn-row{display:flex;flex-wrap:wrap;gap:8px}
+    .saved-list{display:flex;flex-direction:column;gap:8px;max-height:150px;overflow:auto}
+    .saved-item{display:flex;gap:8px;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}
+    .empty{color:var(--muted);font-size:.85rem;text-align:center;padding:12px}
+
+    .hero{padding:26px 0 34px;display:grid;grid-template-columns:1.25fr .75fr;gap:26px;align-items:end}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--cyan);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.74rem}
+    .eyebrow::before{content:"";width:26px;height:2px;background:linear-gradient(90deg,var(--cyan),var(--amber))}
+    h1,h2,h3{font-family:var(--font-display);line-height:1.12;margin:0}
+    h1{font-size:clamp(2rem,4.4vw,3.6rem);letter-spacing:-.02em;margin-top:10px}
+    .grad-text{background:linear-gradient(90deg,var(--cyan),var(--lime),var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lede{color:var(--muted);font-size:clamp(1rem,1.4vw,1.15rem);max-width:62ch;margin:14px 0 0}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .stat{background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+    .stat b{display:block;font-family:var(--font-display);font-size:1.5rem;color:var(--text)}
+    .stat span{color:var(--muted);font-size:.85rem}
+
+    .content-section{padding:56px 0}
+    .section-head{max-width:760px;margin-bottom:26px}
+    .section-head h2{font-size:clamp(1.6rem,3vw,2.4rem)}
+    .section-head p{color:var(--muted)}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .card{background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+    .card h3{font-size:1.1rem;margin-bottom:8px}
+    .card p{color:var(--muted);margin:0}
+    .card .icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:12px;background:rgba(34,211,238,.12);color:var(--cyan)}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:step}
+    .step{position:relative;padding:20px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface)}
+    .step::before{counter-increment:step;content:"0" counter(step);font-family:var(--font-display);font-size:2rem;color:var(--amber);display:block;margin-bottom:8px}
+    .method{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+    .formula{background:var(--bg);border:1px solid var(--line-strong);border-radius:14px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--lime);overflow:auto}
+    details{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:0;margin-bottom:10px;overflow:hidden}
+    summary{cursor:pointer;padding:16px 18px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px}
+    summary::-webkit-details-marker{display:none}
+    summary::after{content:"+";color:var(--cyan);font-size:1.3rem}
+    details[open] summary::after{content:"–"}
+    details p{margin:0;padding:0 18px 16px;color:var(--muted)}
+    footer{border-top:1px solid var(--line);padding:30px 0 26px;color:var(--muted);font-size:.9rem;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--surface) 65%,transparent))}
+    footer .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+    .footer-main{align-items:flex-start;gap:28px;padding-bottom:22px}
+    .footer-brand{display:flex;flex-direction:column;gap:12px;max-width:430px}
+    .footer-brand p{margin:0}
+    .social{display:flex;gap:10px}
+    .social a{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--text);transition:transform .15s ease,background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease}
+    .social a svg{width:20px;height:20px;fill:currentColor;display:block}
+    .social a:hover{transform:translateY(-2px);color:#fff;border-color:transparent;box-shadow:0 10px 24px rgba(0,0,0,.3)}
+    .social a[data-social="youtube"]:hover{background:#ff0033}
+    .social a[data-social="linkedin"]:hover{background:#0a66c2}
+    .social a[data-social="telegram"]:hover{background:#29a9eb}
+    .social a[data-social="instagram"]:hover{background:linear-gradient(45deg,#f9ce34,#ee2a7b 55%,#6228d7)}
+    .footer-links{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+    .footer-links a{color:var(--text);text-decoration:none;font-weight:700;font-size:.9rem;padding:9px 14px;border-radius:11px;border:1px solid var(--line);background:var(--surface);transition:transform .15s ease,border-color .15s ease,color .15s ease}
+    .footer-links a:hover{transform:translateY(-2px);border-color:var(--cyan);color:var(--cyan)}
+    .footer-bottom{border-top:1px solid var(--line);padding-top:16px;font-size:.84rem;align-items:center}
+
+    .toast-region{position:fixed;right:16px;bottom:16px;z-index:100;display:flex;flex-direction:column;gap:10px}
+    .toast{background:var(--overlay);border:1px solid var(--line-strong);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:center;min-width:260px;animation:pop .2s ease}
+    .toast button{margin-left:auto}
+    @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    dialog{border:1px solid var(--line-strong);border-radius:18px;background:var(--surface);color:var(--text);padding:22px;max-width:520px;box-shadow:var(--shadow)}
+    dialog::backdrop{background:var(--scrim)}
+    kbd{background:var(--bg);border:1px solid var(--line-strong);border-bottom-width:3px;border-radius:6px;padding:2px 7px;font-size:.8rem}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    @media (max-width:1100px){
+      .workspace{grid-template-columns:1fr}
+      .builder{position:static;max-height:none}
+      .hero{grid-template-columns:1fr}
+      .cards,.steps,.method{grid-template-columns:1fr}
+    }
+    @media (max-width:720px){
+      .nav a:not(.btn){display:none}
+      .nav .btn-primary{display:none}
+      .nav-toggle{display:inline-flex}
+      .hero-stats{grid-template-columns:1fr 1fr}
+      #mapHolder{height:58vh;min-height:420px}
+      .map-card{min-height:420px}
+      .insight{max-width:100%}
+      .map-legend{display:none}
+      .controls-grid{grid-template-columns:1fr}
+      .map-topbar{flex-wrap:wrap}
+      .map-tools{margin-left:0;width:100%;justify-content:flex-start}
+      .footer-main{flex-direction:column;gap:20px}
+      .footer-links{width:100%}
+      .footer-links a{flex:1 1 auto;text-align:center}
+    }
+    @media (prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#explorer">Skip to interactive map</a>
+
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="TrueScale Atlas home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#03101c" stroke-width="2"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#03101c" stroke-width="1.6"/></svg>
+      </span>
+      TrueScale Atlas
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html" data-nav="map" aria-current="page">map</a>
+      <a href="compare.html" data-nav="comparisons">Comparisons</a>
+      <a href="#method" data-nav="method">Method</a>
+      <a href="#faq" data-nav="faq">FAQ</a>
+      <a class="btn btn-primary btn-sm" href="#explorer">Start comparing</a>
+      <button class="btn btn-icon nav-toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+        <svg id="navToggleIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="nav-scrim" id="navScrim" hidden></div>
+  <div class="mobile-nav" id="mobileNav" hidden>
+    <nav aria-label="Mobile primary">
+      <a class="mnav-link" href="index.html" aria-current="page">map <small>True-size world map</small></a>
+      <a class="mnav-link" href="compare.html">Comparisons <small>Curated match-ups</small></a>
+      <a class="mnav-link" href="#method">Method <small>Geometry &amp; data</small></a>
+      <a class="mnav-link" href="#faq">FAQ <small>Plain answers</small></a>
+    </nav>
+    <a class="btn btn-primary" href="#explorer">Start comparing</a>
+  </div>
+
+  <main id="top">
+    <div class="wrap">
+      <section id="explorer" class="workspace" aria-label="True size map explorer and builder">
+        <div class="map-card">
+          <div class="map-topbar">
+            <span class="pill"><span class="dot" aria-hidden="true"></span><span id="modePill">True-size mode</span></span>
+            <span class="pill" id="coordPill">0.0°, 0.0°</span>
+            <div class="map-tools">
+              <button class="btn btn-icon" id="zoomIn" type="button" aria-label="Zoom in">+</button>
+              <button class="btn btn-icon" id="zoomOut" type="button" aria-label="Zoom out">−</button>
+              <button class="btn btn-sm" id="fitBtn" type="button">Fit layers</button>
+              <button class="btn btn-sm" id="resetViewBtn" type="button">Reset view</button>
+            </div>
+          </div>
+          <div id="mapHolder">
+            <svg id="mapSvg" role="img" aria-label="Interactive world map. Drag country shapes to compare their true areas at different latitudes." tabindex="0"></svg>
+            <div class="loading" id="loading">
+              <div style="text-align:center">
+                <div class="loader" style="margin:0 auto 14px"></div>
+                <p style="margin:0;color:var(--muted)">Loading open world boundaries…</p>
+              </div>
+            </div>
+          </div>
+          <div class="map-footer">
+            <div class="insight" id="insight" aria-live="polite">Add countries to begin comparing.</div>
+            <div class="map-legend" id="legend"></div>
+          </div>
+        </div>
+
+        <aside class="builder" id="builder" aria-label="Comparison builder controls">
+          <h2>Comparison Builder <span class="badge">Live</span></h2>
+
+          <div class="panel">
+            <p class="panel-title">Add a country or region</p>
+            <div class="search-row">
+              <input class="input" id="countrySearch" type="search" placeholder="Search: Greenland, Iran, Japan…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="suggestList" aria-label="Search countries" />
+              <button class="btn btn-primary" id="addBtn" type="button">Add</button>
+              <div class="suggest" id="suggestList" role="listbox" aria-label="Country suggestions"></div>
+            </div>
+            <div class="chips" id="quickChips"></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-title">Layers</p>
+            <div class="layer-toolbar">
+              <label class="sr-only" for="selectAll">Select all layers</label>
+              <input type="checkbox" id="selectAll" aria-label="Select all layers" />
+              <select id="sortLayers" aria-label="Sort layers" style="width:auto">
+                <option value="manual">Manual order</option>
+                <option value="name">Name A–Z</option>
+                <option value="area">Largest area</option>
+              </select>
+              <button class="btn btn-sm btn-ghost" id="bulkDelete" type="button">Delete selected</button>
+            </div>
+            <div class="layer-list" id="layerList"></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-title">Selected layer controls</p>
+            <div class="controls-grid">
+              <div class="control full">
+                <label for="latRange">Latitude <output id="latOut">0°</output></label>
+                <input type="range" id="latRange" min="-85" max="85" step="0.5" value="0" />
+              </div>
+              <div class="control full">
+                <label for="lonRange">Longitude <output id="lonOut">0°</output></label>
+                <input type="range" id="lonRange" min="-180" max="180" step="0.5" value="0" />
+              </div>
+              <div class="control full">
+                <label for="rotRange">Rotation <output id="rotOut">0°</output></label>
+                <input type="range" id="rotRange" min="-180" max="180" step="1" value="0" />
+              </div>
+              <div class="control">
+                <label for="opacityRange">Opacity <output id="opacityOut">70%</output></label>
+                <input type="range" id="opacityRange" min="10" max="100" step="1" value="70" />
+              </div>
+              <div class="control">
+                <label for="strokeRange">Outline <output id="strokeOut">1.5px</output></label>
+                <input type="range" id="strokeRange" min="0" max="5" step="0.25" value="1.5" />
+              </div>
+              <div class="control">
+                <label for="colorInput">Fill color</label>
+                <input type="color" id="colorInput" value="#22d3ee" />
+              </div>
+              <div class="control">
+                <label for="unitSelect">Area units</label>
+                <select id="unitSelect"><option value="km">km²</option><option value="mi">mi²</option></select>
+              </div>
+              <div class="control full switch"><span>True-size correction</span><input type="checkbox" id="trueSizeToggle" checked aria-label="Toggle true-size correction" /></div>
+              <div class="control full switch"><span>Map labels</span><input type="checkbox" id="labelsToggle" checked aria-label="Toggle map labels" /></div>
+              <div class="control full switch"><span>Graticule grid</span><input type="checkbox" id="gratToggle" checked aria-label="Toggle graticule grid" /></div>
+              <div class="control full">
+                <label for="themeSelect">Map theme</label>
+                <select id="themeSelect"><option value="ocean">Deep Ocean</option><option value="midnight">Midnight Violet</option><option value="paper">Warm Paper</option></select>
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:12px">
+              <button class="btn btn-sm" id="randomBtn" type="button">Randomize</button>
+              <button class="btn btn-sm" id="resetBtn" type="button">Reset comparison</button>
+              <button class="btn btn-sm" id="undoBtn" type="button">Undo</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-title">Presets</p>
+            <div class="chips" id="presetChips"></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-title">Page metadata for exports</p>
+            <div class="control" style="margin-bottom:8px"><label for="metaTitle">Title</label><input class="input" id="metaTitle" value="Greenland vs Africa — True Size Comparison" /></div>
+            <div class="control"><label for="metaDesc">Description</label><textarea id="metaDesc">An interactive, distortion-aware comparison of country areas built with TrueScale Atlas.</textarea></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-title">Saved comparisons</p>
+            <div class="search-row" style="margin-bottom:8px">
+              <input class="input" id="saveName" placeholder="Name this comparison" aria-label="Saved comparison name" />
+              <button class="btn btn-sm btn-primary" id="saveBtn" type="button">Save</button>
+            </div>
+            <div class="saved-list" id="savedList"></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-title">Share & export</p>
+            <div class="btn-row">
+              <button class="btn btn-sm btn-primary" id="shareBtn" type="button">Copy share link</button>
+              <button class="btn btn-sm" id="pngBtn" type="button">PNG</button>
+              <button class="btn btn-sm" id="svgBtn" type="button">SVG</button>
+              <button class="btn btn-sm" id="jsonBtn" type="button">JSON</button>
+              <button class="btn btn-sm btn-amber" id="htmlBtn" type="button">HTML page</button>
+              <button class="btn btn-sm btn-ghost" id="embedBtn" type="button">Copy embed</button>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <span class="eyebrow">Distortion-aware cartography</span>
+          <h1 id="hero-title">See countries at their <span class="grad-text">true size.</span></h1>
+          <p class="lede">Drag any country across the globe and watch Mercator exaggeration disappear. TrueScale Atlas preserves spherical area while you move, rotate, compare, save, and export — free, open data, no API key, no signup.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#explorer">Open the map</a>
+            <button class="btn btn-amber" id="heroPreset" type="button">Try Greenland vs Africa</button>
+            <button class="btn btn-ghost" id="shortcutsBtn" type="button">Keyboard shortcuts</button>
+          </div>
+        </div>
+        <div class="hero-stats" aria-label="Product highlights">
+          <div class="stat"><b id="statCountries">177</b><span>country & region shapes</span></div>
+          <div class="stat"><b>0</b><span>API keys required</span></div>
+          <div class="stat"><b>100%</b><span>client-side & exportable</span></div>
+        </div>
+      </section>
+
+      <section class="content-section" aria-labelledby="why-title">
+        <div class="section-head">
+          <span class="eyebrow">Why it matters</span>
+          <h2 id="why-title">Most world maps quietly distort size.</h2>
+          <p>Direct answer: Mercator maps preserve direction, not area. TrueScale Atlas lets you move countries to the same latitude so your eyes and the numbers agree.</p>
+        </div>
+        <div class="cards">
+          <article class="card"><div class="icon" aria-hidden="true">↕</div><h3>Polar exaggeration</h3><p>Greenland looks continental on Mercator, yet Africa is roughly fourteen times larger. Moving shapes toward the equator reveals the truth.</p></article>
+          <article class="card"><div class="icon" aria-hidden="true">◎</div><h3>Area-preserving movement</h3><p>Instead of scaling pixels, the app rotates outlines on a sphere. The spherical area stays constant while the projected appearance changes.</p></article>
+          <article class="card"><div class="icon" aria-hidden="true">⇩</div><h3>Export-ready learning</h3><p>Save comparisons, share links, or download PNG, SVG, JSON, and standalone HTML for classrooms, articles, and static hosting.</p></article>
+        </div>
+      </section>
+
+      <section class="content-section" aria-labelledby="how-title">
+        <div class="section-head">
+          <span class="eyebrow">Workflow</span>
+          <h2 id="how-title">Compare in three steps.</h2>
+        </div>
+        <div class="steps">
+          <div class="step"><h3>Add shapes</h3><p>Search countries, tap quick chips, or load a preset. Each layer gets its own color, opacity, and outline.</p></div>
+          <div class="step"><h3>Move & rotate</h3><p>Drag on the map or use latitude, longitude, and rotation sliders. Toggle true-size mode to see the distortion difference.</p></div>
+          <div class="step"><h3>Compare & publish</h3><p>Read live area ratios, save views locally, copy a share link, or export a file you can upload to any host.</p></div>
+        </div>
+      </section>
+
+      <section id="method" class="content-section" aria-labelledby="method-title">
+        <div class="section-head">
+          <span class="eyebrow">Method & accuracy</span>
+          <h2 id="method-title">Transparent geometry, honest numbers.</h2>
+        </div>
+        <div class="method">
+          <div class="card">
+            <h3>How true-size mode works</h3>
+            <p style="color:var(--muted)">Each outline is converted to unit-sphere vectors, rotated from its original spherical centroid to the target latitude and longitude, optionally spun around the target axis, then projected with Mercator. This preserves spherical area exactly for the given boundary.</p>
+            <div class="formula" style="margin-top:12px">area ≈ R² · Σ spherical_ring_excess &nbsp; | &nbsp; R = 6371.0088 km<br>rotation: Rodrigues(v, axis, θ) → Mercator(lon, lat)</div>
+          </div>
+          <div class="card">
+            <h3>Data & limitations</h3>
+            <p style="color:var(--muted)">Boundaries: Natural Earth 1:110m public-domain data via <a href="https://github.com/topojson/world-atlas" rel="noopener">world-atlas</a>. Areas are computed from these generalized outlines, so they are excellent for visual education but are not official national statistics. Coastlines and small islands are simplified.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="content-section" aria-labelledby="faq-title">
+        <div class="section-head">
+          <span class="eyebrow">FAQ</span>
+          <h2 id="faq-title">Questions, answered plainly.</h2>
+        </div>
+        <details open><summary>Why does Greenland look as large as Africa on many maps?</summary><p>Mercator stretches areas near the poles. Greenland appears huge, but Africa is about 14 times larger in real area.</p></details>
+        <details><summary>How does TrueScale Atlas keep country sizes accurate?</summary><p>Country outlines are rotated on a sphere before projection, so their spherical area stays constant while their Mercator appearance changes with latitude.</p></details>
+        <details><summary>Are the area numbers official statistics?</summary><p>No. They are computed from Natural Earth 1:110m boundaries and are intended for education and visual comparison, not legal or survey use.</p></details>
+        <details><summary>Do I need an API key or backend?</summary><p>No. Libraries and data load from public CDNs, and all interaction, saving, and exporting happens in your browser.</p></details>
+        <details><summary>Can I upload the exported file to my host?</summary><p>Yes. Use “HTML page” to download a standalone snapshot, or host this single index.html file on any static host such as GitHub Pages, Netlify, Cloudflare Pages, or shared hosting.</p></details>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap footer-main">
+      <div class="footer-brand">
+        <a class="brand" href="index.html" aria-label="TrueScale Atlas home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#03101c" stroke-width="2"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#03101c" stroke-width="1.6"/></svg>
+          </span>
+          TrueScale Atlas
+        </a>
+        <p>TrueScale Atlas — open-data cartography for everyone. Drag, compare, and publish honest country sizes.</p>
+        <div class="social" aria-label="Social media">
+          <a href="#" data-social="youtube" aria-label="TrueScale Atlas on YouTube" title="YouTube">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12l-6.2 3.6Z"/></svg>
+          </a>
+          <a href="#" data-social="linkedin" aria-label="TrueScale Atlas on LinkedIn" title="LinkedIn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3.2 9.2h3.6V21H3.2V9.2Zm6.1 0h3.45v1.62h.05c.48-.9 1.66-1.85 3.42-1.85 3.66 0 4.33 2.36 4.33 5.43V21h-3.6v-5.7c0-1.36-.03-3.11-1.9-3.11-1.9 0-2.19 1.48-2.19 3.01V21H9.3V9.2Z"/></svg>
+          </a>
+          <a href="#" data-social="telegram" aria-label="TrueScale Atlas on Telegram" title="Telegram">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.94 4.3 19.1 19.06c-.21 1-.83 1.24-1.68.77l-4.64-3.42-2.24 2.16c-.25.25-.46.46-.94.46l.33-4.73 8.6-7.78c.38-.33-.08-.52-.58-.19L7.32 13.1 2.75 11.7c-.99-.31-1.01-.99.21-1.47l17.85-6.88c.83-.3 1.55.2 1.13 2.95Z"/></svg>
+          </a>
+          <a href="#" data-social="instagram" aria-label="TrueScale Atlas on Instagram" title="Instagram">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.8 3.8 0 0 1-1.38-.9 3.8 3.8 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16Zm0 1.98c-3.15 0-3.5.01-4.74.07-1.14.05-1.76.24-2.17.4-.55.21-.94.47-1.35.88-.41.41-.67.8-.88 1.35-.16.41-.35 1.03-.4 2.17-.06 1.24-.07 1.6-.07 4.74s.01 3.5.07 4.74c.05 1.14.24 1.76.4 2.17.21.55.47.94.88 1.35.41.41.8.67 1.35.88.41.16 1.03.35 2.17.4 1.24.06 1.6.07 4.74.07s3.5-.01 4.74-.07c1.14-.05 1.76-.24 2.17-.4.55-.21.94-.47 1.35-.88.41-.41.67-.8.88-1.35.16-.41.35-1.03.4-2.17.06-1.24.07-1.6.07-4.74s-.01-3.5-.07-4.74c-.05-1.14-.24-1.76-.4-2.17a3.6 3.6 0 0 0-.88-1.35 3.6 3.6 0 0 0-1.35-.88c-.41-.16-1.03-.35-2.17-.4-1.24-.06-1.6-.07-4.74-.07Zm0 3.37a4.49 4.49 0 1 1 0 8.98 4.49 4.49 0 0 1 0-8.98Zm0 7.4a2.91 2.91 0 1 0 0-5.82 2.91 2.91 0 0 0 0 5.82Zm5.72-7.6a1.05 1.05 0 1 1-2.1 0 1.05 1.05 0 0 1 2.1 0Z"/></svg>
+          </a>
+        </div>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="index.html">map</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="method.html">Method</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+    <div class="wrap footer-bottom">
+      <span>Data: Natural Earth · Libraries: D3 &amp; TopoJSON · No tracking.</span>
+      <span>© <span id="footerYear">2026</span> TrueScale Atlas</span>
+    </div>
+  </footer>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
+
+  <dialog id="shortcutsDialog" aria-labelledby="shortcuts-title">
+    <h3 id="shortcuts-title" style="margin-bottom:12px">Keyboard shortcuts</h3>
+    <p><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> move selected layer · <kbd>Shift</kbd> faster</p>
+    <p><kbd>R</kbd> rotate · <kbd>Delete</kbd> remove · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</p>
+    <p><kbd>+</kbd>/<kbd>−</kbd> zoom · <kbd>Esc</kbd> deselect · drag map to pan, wheel to zoom</p>
+    <form method="dialog" style="margin-top:14px"><button class="btn btn-primary">Close</button></form>
+  </dialog>
+
+  <noscript><div style="padding:20px;text-align:center">TrueScale Atlas needs JavaScript for the interactive map. The educational content above remains readable.</div></noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script>
+  (function(){
+    "use strict";
+    const R_EARTH = 6371.0088;
+    const PALETTE = ["#22d3ee","#f59e0b","#a3e635","#e879f9","#ff5a5f","#3b82f6","#2dd4bf","#8b5cf6"];
+    const THEMES = {
+      ocean:{bg1:"#04121f",bg2:"#0a2a44",land:"#123049",border:"#2c5675",grat:"#2dd4bf",text:"#dff6ff",sub:"#9db4c8"},
+      midnight:{bg1:"#050510",bg2:"#141438",land:"#17173a",border:"#3a3a72",grat:"#8b5cf6",text:"#efeaff",sub:"#a7a4c8"},
+      paper:{bg1:"#efe7d6",bg2:"#f8f3e8",land:"#e5dcc8",border:"#b6a687",grat:"#0f766e",text:"#1d2733",sub:"#5c6b7a"}
+    };
+    const AFRICA_IDS = new Set("012 024 204 072 854 108 120 140 148 178 180 384 262 818 226 232 748 231 266 270 288 324 624 404 426 430 434 450 454 466 478 504 508 516 562 566 646 686 694 706 710 728 729 834 768 788 800 894 716 732".split(" "));
+    const ALIASES = {
+      "United States of America":["usa","us","united states","america"],
+      "United Kingdom":["uk","britain","great britain","england"],
+      "Russia":["russian federation"],
+      "Iran":["persia"],
+      "South Korea":["korea"],
+      "Czechia":["czech republic"],
+      "Côte d'Ivoire":["ivory coast"],
+      "Myanmar":["burma"],
+      "Timor-Leste":["east timor"],
+      "eSwatini":["swaziland"],
+      "Macedonia":["north macedonia"],
+      "Dem. Rep. Congo":["drc","dr congo"],
+      "United Arab Emirates":["uae"],
+      "Bosnia and Herz.":["bosnia"],
+      "Central African Rep.":["central african republic"],
+      "Dominican Rep.":["dominican republic"],
+      "Eq. Guinea":["equatorial guinea"],
+      "W. Sahara":["western sahara"],
+      "S. Sudan":["south sudan"],
+      "Fr. S. Antarctic Lands":["french southern territories"]
+    };
+
+    const $ = (s)=>document.querySelector(s);
+    const $$ = (s)=>Array.from(document.querySelectorAll(s));
+    const svg = d3.select("#mapSvg");
+    const holder = $("#mapHolder");
+    const loadingEl = $("#loading");
+    const navToggle = $("#navToggle"), mobileNav = $("#mobileNav"), navScrim = $("#navScrim"), navToggleIcon = $("#navToggleIcon");
+    let navOpen = false, navHideTimer = 0;
+    let atlas=null, landFeature=null, borderMesh=null, catalog=new Map(), countryCount=0;
+    let width=900, height=640, baseScale=150, raf=0, layerSeq=0, colorSeq=0;
+    let baseProjection=d3.geoMercator(), projection=d3.geoMercator(), path=d3.geoPath(projection), basePath=d3.geoPath(baseProjection);
+    const graticule = d3.geoGraticule10();
+    const state = {
+      layers:[], selectedId:null, referenceId:null,
+      settings:{trueSize:true,labels:true,graticule:true,theme:"ocean",units:"km"},
+      meta:{title:"Greenland vs Africa — True Size Comparison",description:"An interactive, distortion-aware comparison of country areas built with TrueScale Atlas."},
+      view:{k:1,x:0,y:0}, sort:"manual"
+    };
+    const undoStack=[];
+    let drag=null, suggestIndex=-1, suggestItems=[], uiBound=false, resizeObserver=null, dragLayerId=null;
+
+    const motionMs = (ms)=>window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : ms;
+    const zoom = d3.zoom().scaleExtent([0.55,16]).filter((ev)=>{
+      if(ev.type==="wheel") return true;
+      return !ev.target.closest || !ev.target.closest(".country-layer");
+    }).on("zoom",(ev)=>{
+      state.view={k:ev.transform.k,x:ev.transform.x,y:ev.transform.y};
+      scheduleRender();
+    });
+    svg.call(zoom).on("dblclick.zoom",null);
+
+    /* ---------------- mobile menu ---------------- */
+    function openMenu(){
+      if(navOpen) return;
+      navOpen=true; clearTimeout(navHideTimer);
+      mobileNav.hidden=false; navScrim.hidden=false;
+      requestAnimationFrame(()=>{mobileNav.classList.add("open");navScrim.classList.add("open");});
+      navToggle.setAttribute("aria-expanded","true");
+      navToggle.setAttribute("aria-label","Close menu");
+      navToggleIcon.innerHTML='<path d="M6 6l12 12M18 6L6 18"/>';
+      document.body.classList.add("nav-open");
+      const first=mobileNav.querySelector("a");
+      if(first) first.focus();
+    }
+    function closeMenu(){
+      if(!navOpen) return;
+      navOpen=false;
+      mobileNav.classList.remove("open"); navScrim.classList.remove("open");
+      navToggle.setAttribute("aria-expanded","false");
+      navToggle.setAttribute("aria-label","Open menu");
+      navToggleIcon.innerHTML='<path d="M4 7h16M4 12h16M4 17h16"/>';
+      document.body.classList.remove("nav-open");
+      navHideTimer=setTimeout(()=>{if(!navOpen){mobileNav.hidden=true;navScrim.hidden=true;}},240);
+    }
+    function bindMobileNav(){
+      const y=$("#footerYear"); if(y) y.textContent=String(new Date().getFullYear());
+      navToggle.addEventListener("click",()=>{navOpen?closeMenu():openMenu();});
+      navScrim.addEventListener("click",closeMenu);
+      mobileNav.addEventListener("click",(e)=>{if(e.target.closest("a")) closeMenu();});
+      mobileNav.addEventListener("keydown",(e)=>{
+        if(e.key!=="Tab") return;
+        const items=Array.from(mobileNav.querySelectorAll("a[href]"));
+        if(!items.length) return;
+        const first=items[0], last=items[items.length-1];
+        if(e.shiftKey && document.activeElement===first){e.preventDefault();last.focus();}
+        else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
+      });
+      document.addEventListener("keydown",(e)=>{
+        if(e.key==="Escape" && navOpen){e.preventDefault();e.stopImmediatePropagation();closeMenu();navToggle.focus();}
+      });
+      window.addEventListener("resize",()=>{if(navOpen && window.innerWidth>720) closeMenu();});
+    }
+
+    function esc(s){return String(s).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+    function slug(s){return String(s).toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,60)||"comparison";}
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+    function wrapLon(l){return ((l+180)%360+360)%360-180;}
+    function fmtArea(km2){
+      const val = state.settings.units==="mi" ? km2*0.3861021585 : km2;
+      const unit = state.settings.units==="mi" ? "mi²" : "km²";
+      if(val>=1e6) return (val/1e6).toFixed(2)+"M "+unit;
+      return Math.round(val).toLocaleString("en-US")+" "+unit;
+    }
+    function toast(msg, actionLabel, actionFn){
+      const el=document.createElement("div"); el.className="toast";
+      el.innerHTML=`<span>${esc(msg)}</span>`;
+      if(actionLabel){const b=document.createElement("button");b.className="btn btn-sm";b.textContent=actionLabel;b.onclick=()=>{actionFn&&actionFn();el.remove();};el.appendChild(b);}
+      $("#toastRegion").appendChild(el);
+      setTimeout(()=>{el.style.opacity="0";el.style.transition="opacity .3s";setTimeout(()=>el.remove(),320);},4200);
+    }
+    async function copyText(text){
+      try{await navigator.clipboard.writeText(text);return true;}
+      catch(e){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();const ok=document.execCommand("copy");ta.remove();return ok;}
+    }
+    function download(name, blob){
+      const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    }
+    function pushSnapshot(snap){undoStack.push(snap);if(undoStack.length>40)undoStack.shift();$("#undoBtn").disabled=false;}
+    function pushHistory(){pushSnapshot(JSON.stringify(serialize()));}
+
+    function ringArea(coords){
+      let total=0;const n=coords.length;
+      for(let i=0;i<n;i++){
+        const [lo1,la1]=coords[i], [lo2,la2]=coords[(i+1)%n];
+        let d=(lo2-lo1)*Math.PI/180;
+        if(d>Math.PI)d-=2*Math.PI; if(d<-Math.PI)d+=2*Math.PI;
+        total += d*(2+Math.sin(la1*Math.PI/180)+Math.sin(la2*Math.PI/180));
+      }
+      let a=Math.abs(total/2); if(a>2*Math.PI)a=4*Math.PI-a; return a;
+    }
+    function featureArea(feature){
+      const g=feature.geometry; if(!g)return 0;
+      const polys = g.type==="Polygon" ? [g.coordinates] : g.type==="MultiPolygon" ? g.coordinates : [];
+      let area=0;
+      for(const poly of polys){poly.forEach((ring,i)=>{const a=ringArea(ring);area += i===0?a:-a;});}
+      return Math.max(0,area)*R_EARTH*R_EARTH;
+    }
+    function toVec(lon,lat){const φ=lat*Math.PI/180, λ=lon*Math.PI/180;return [Math.cos(φ)*Math.cos(λ),Math.cos(φ)*Math.sin(λ),Math.sin(φ)];}
+    function fromVec(v){return [Math.atan2(v[1],v[0])*180/Math.PI, Math.asin(clamp(v[2],-1,1))*180/Math.PI];}
+    function cross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+    function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+    function norm(a){const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];}
+    function rodrigues(v,axis,ang){
+      const c=Math.cos(ang),s=Math.sin(ang),d=dot(axis,v),cr=cross(axis,v);
+      return [v[0]*c+cr[0]*s+axis[0]*d*(1-c),v[1]*c+cr[1]*s+axis[1]*d*(1-c),v[2]*c+cr[2]*s+axis[2]*d*(1-c)];
+    }
+    function mapCoords(coords,fn){
+      if(typeof coords[0]==="number") return fn(coords);
+      return coords.map((c)=>mapCoords(c,fn));
+    }
+    function transformedFeature(layer){
+      const key=[layer.lon.toFixed(3),layer.lat.toFixed(3),layer.rotation.toFixed(2)].join("|");
+      if(layer._cacheKey===key && layer._geom) return layer._geom;
+      const entry=catalog.get(layer.sourceId); if(!entry)return null;
+      const a=toVec(entry.centroid[0],entry.centroid[1]), b=toVec(layer.lon,layer.lat);
+      let axis=cross(a,b), sin=Math.hypot(axis[0],axis[1],axis[2]), cos=dot(a,b), ang;
+      if(sin<1e-9){ if(cos>0){axis=[0,0,1];ang=0;} else {axis=norm(Math.abs(a[0])<0.9?cross(a,[1,0,0]):cross(a,[0,1,0]));ang=Math.PI;} }
+      else {axis=norm(axis);ang=Math.atan2(sin,cos);}
+      const spin=layer.rotation*Math.PI/180;
+      const geom={type:entry.feature.geometry.type,coordinates:mapCoords(entry.feature.geometry.coordinates,(pt)=>{
+        let v=toVec(pt[0],pt[1]); v=rodrigues(v,axis,ang); v=rodrigues(v,b,spin); return fromVec(v);
+      })};
+      layer._cacheKey=key; layer._geom=geom; return geom;
+    }
+
+    function buildCatalog(){
+      const fc=topojson.feature(atlas,atlas.objects.countries);
+      countryCount=fc.features.length;
+      fc.features.forEach((f)=>{
+        const name=f.properties&&f.properties.name?f.properties.name:"Unknown";
+        const id=f.id!=null?String(f.id):"name:"+slug(name);
+        catalog.set(id,{id,name,kind:"Country",feature:f,centroid:d3.geoCentroid(f),area:featureArea(f),aliases:ALIASES[name]||[]});
+      });
+      const polys=[];
+      fc.features.forEach((f)=>{if(AFRICA_IDS.has(String(f.id))){const g=f.geometry;if(g.type==="Polygon")polys.push(g.coordinates);else if(g.type==="MultiPolygon")polys.push(...g.coordinates);}});
+      const africa={type:"Feature",properties:{name:"Africa"},geometry:{type:"MultiPolygon",coordinates:polys}};
+      catalog.set("region:africa",{id:"region:africa",name:"Africa",kind:"Continent",feature:africa,centroid:d3.geoCentroid(africa),area:featureArea(africa),aliases:["african continent"]});
+      $("#statCountries").textContent=String(catalog.size);
+    }
+
+    function serialize(){
+      return {
+        v:1,
+        layers:state.layers.map((l)=>({id:l.id,sourceId:l.sourceId,name:l.name,color:l.color,opacity:l.opacity,stroke:l.stroke,visible:l.visible,lon:l.lon,lat:l.lat,rotation:l.rotation})),
+        selectedId:state.selectedId, referenceId:state.referenceId,
+        settings:{...state.settings}, meta:{...state.meta}, view:{...state.view}
+      };
+    }
+    function restore(data, fit){
+      if(!data||!Array.isArray(data.layers))return;
+      state.layers=data.layers.map((l)=>({...l,_cacheKey:null,_geom:null})).filter((l)=>catalog.has(l.sourceId));
+      state.selectedId=data.selectedId||state.layers[0]?.id||null;
+      state.referenceId=data.referenceId||state.layers[0]?.id||null;
+      Object.assign(state.settings,data.settings||{});
+      Object.assign(state.meta,data.meta||{});
+      if(data.view){
+        state.view={k:clamp(+data.view.k||1,0.55,16),x:+data.view.x||0,y:+data.view.y||0};
+      }
+      layerSeq=state.layers.reduce((m,l)=>{const n=parseInt(String(l.id).replace(/^l/,""),10);return Number.isFinite(n)?Math.max(m,n):m;},0);
+      colorSeq=state.layers.length;
+      applySettingsToUI(); syncAll();
+      if(fit)fitLayers(); else applyView();
+    }
+    function undo(){const s=undoStack.pop();if(!s){toast("Nothing to undo");return;}restore(JSON.parse(s),false);toast("Undone");$("#undoBtn").disabled=undoStack.length===0;}
+
+    function addLayer(sourceId, opts={}){
+      const entry=catalog.get(sourceId); if(!entry)return null;
+      pushHistory();
+      const layer={
+        id:"l"+(++layerSeq), sourceId, name:entry.name,
+        color:opts.color||PALETTE[colorSeq++%PALETTE.length],
+        opacity:opts.opacity??70, stroke:opts.stroke??1.5, visible:true,
+        lon:opts.lon??entry.centroid[0], lat:opts.lat??entry.centroid[1], rotation:opts.rotation??0,
+        _cacheKey:null,_geom:null
+      };
+      state.layers.push(layer); state.selectedId=layer.id; if(!state.referenceId)state.referenceId=layer.id;
+      syncAll(); scheduleRender(); return layer;
+    }
+    function removeLayer(id){
+      const idx=state.layers.findIndex((l)=>l.id===id); if(idx<0)return;
+      pushHistory(); const [removed]=state.layers.splice(idx,1);
+      if(state.selectedId===id)state.selectedId=state.layers[Math.min(idx,state.layers.length-1)]?.id||null;
+      if(state.referenceId===id)state.referenceId=state.layers[0]?.id||null;
+      syncAll();scheduleRender();
+      toast(`Removed ${removed.name}`,"Undo",undo);
+    }
+    function selected(){return state.layers.find((l)=>l.id===state.selectedId)||null;}
+    function reference(){return state.layers.find((l)=>l.id===state.referenceId)||state.layers[0]||null;}
+
+    function resize(){
+      const rect=holder.getBoundingClientRect(); width=Math.max(320,rect.width); height=Math.max(360,rect.height);
+      svg.attr("viewBox",`0 0 ${width} ${height}`).attr("width",width).attr("height",height);
+      baseScale=Math.min(width/(2*Math.PI),height/5.7)*0.98;
+      baseProjection=d3.geoMercator().scale(baseScale).translate([width/2,height/2]);
+      basePath=d3.geoPath(baseProjection);
+      scheduleRender();
+    }
+    function applyView(){
+      const t=d3.zoomIdentity.translate(state.view.x,state.view.y).scale(state.view.k);
+      svg.call(zoom.transform,t);
+    }
+    function updateProjection(){
+      const {k,x,y}=state.view;
+      projection=d3.geoMercator().scale(baseScale*k).translate([width/2*k+x,height/2*k+y]);
+      path=d3.geoPath(projection);
+    }
+    function scheduleRender(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;render();});}
+
+    function render(){
+      if(!atlas)return;
+      updateProjection();
+      const th=THEMES[state.settings.theme]||THEMES.ocean;
+      svg.selectAll("*").remove();
+      const defs=svg.append("defs");
+      const grad=defs.append("linearGradient").attr("id","oceanGrad").attr("x1","0").attr("y1","0").attr("x2","1").attr("y2","1");
+      grad.append("stop").attr("offset","0%").attr("stop-color",th.bg1);
+      grad.append("stop").attr("offset","55%").attr("stop-color",th.bg2);
+      grad.append("stop").attr("offset","100%").attr("stop-color",th.bg1);
+      svg.append("rect").attr("width",width).attr("height",height).attr("fill","url(#oceanGrad)");
+      if(state.settings.graticule){
+        svg.append("path").attr("d",path(graticule)).attr("fill","none").attr("stroke",th.grat).attr("stroke-opacity",0.16).attr("stroke-width",0.7);
+      }
+      svg.append("path").attr("d",path(landFeature)).attr("fill",th.land).attr("stroke","none");
+      svg.append("path").attr("d",path(borderMesh)).attr("fill","none").attr("stroke",th.border).attr("stroke-width",0.6).attr("stroke-opacity",0.8);
+      const layerG=svg.append("g"), labelG=svg.append("g");
+      state.layers.forEach((layer)=>{
+        if(!layer.visible)return;
+        const entry=catalog.get(layer.sourceId); if(!entry)return;
+        const anchor=projection([layer.lon,layer.lat]); if(!anchor||!isFinite(anchor[0]))return;
+        let d, transform=null;
+        if(state.settings.trueSize){
+          const geom=transformedFeature(layer); d=path(geom);
+        }else{
+          d=path(entry.feature);
+          const orig=projection(entry.centroid);
+          const dx=anchor[0]-orig[0], dy=anchor[1]-orig[1];
+          transform=`translate(${dx},${dy}) rotate(${layer.rotation},${anchor[0]},${anchor[1]})`;
+        }
+        if(!d)return;
+        const p=layerG.append("path").attr("class","country-layer"+(layer.id===state.selectedId?" selected":""))
+          .attr("d",d).attr("fill",layer.color).attr("fill-opacity",layer.opacity/100)
+          .attr("stroke",layer.color).attr("stroke-width",layer.stroke).attr("stroke-opacity",0.95)
+          .attr("data-id",layer.id).attr("tabindex","0").attr("role","button")
+          .attr("aria-label",`${layer.name}, ${fmtArea(entry.area)}. Drag to move.`);
+        if(transform)p.attr("transform",transform);
+        p.append("title").text(`${layer.name} · ${fmtArea(entry.area)}`);
+        p.on("pointerdown",(ev)=>startDrag(ev,layer));
+        p.on("keydown",(ev)=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();state.selectedId=layer.id;syncAll();}});
+        if(state.settings.labels){
+          const lx=clamp(anchor[0],70,width-70), ly=clamp(anchor[1],28,height-20);
+          labelG.append("text").attr("class","map-label").attr("x",lx).attr("y",ly).attr("text-anchor","middle").attr("font-size",14).text(layer.name);
+          labelG.append("text").attr("class","map-sublabel").attr("x",lx).attr("y",ly+16).attr("text-anchor","middle").attr("font-size",11).text(fmtArea(entry.area));
+        }
+      });
+      updateInsight(); updateLegend(); updateCoordPill();
+    }
+
+    function startDrag(ev,layer){
+      if(ev.button!==0 && ev.pointerType==="mouse")return;
+      ev.preventDefault(); ev.stopPropagation();
+      state.selectedId=layer.id; syncAll();
+      const rect=$("#mapSvg").getBoundingClientRect();
+      const px=ev.clientX-rect.left, py=ev.clientY-rect.top;
+      const anchor=projection([layer.lon,layer.lat]);
+      const snapshot=JSON.stringify(serialize());
+      drag={id:layer.id,offsetX:px-anchor[0],offsetY:py-anchor[1],moved:false,snapshot,historyPushed:false};
+      try{ev.target.setPointerCapture(ev.pointerId);}catch(_){}
+      svg.classed("dragging",true);
+      const move=(e)=>{
+        if(!drag)return;
+        if(!drag.historyPushed){pushSnapshot(drag.snapshot);drag.historyPushed=true;}
+        const mx=e.clientX-rect.left-drag.offsetX, my=e.clientY-rect.top-drag.offsetY;
+        const inv=projection.invert([mx,my]); if(!inv)return;
+        layer.lon=wrapLon(inv[0]); layer.lat=clamp(inv[1],-85,85); layer._cacheKey=null; drag.moved=true;
+        syncControls(); scheduleRender();
+      };
+      const up=(e)=>{
+        if(!drag)return;
+        try{ev.target.releasePointerCapture(e.pointerId);}catch(_){}
+        drag=null;svg.classed("dragging",false);
+        window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);
+        syncAll();
+      };
+      window.addEventListener("pointermove",move);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);
+    }
+
+    function layerBBoxBase(layer){
+      const entry=catalog.get(layer.sourceId); if(!entry)return null;
+      let b;
+      if(state.settings.trueSize){b=basePath.bounds(transformedFeature(layer));}
+      else{
+        b=basePath.bounds(entry.feature);
+        const o=baseProjection(entry.centroid), t=baseProjection([layer.lon,layer.lat]);
+        const dx=t[0]-o[0],dy=t[1]-o[1];
+        b=[[b[0][0]+dx,b[0][1]+dy],[b[1][0]+dx,b[1][1]+dy]];
+      }
+      return b;
+    }
+    function fitLayers(){
+      const visible=state.layers.filter((l)=>l.visible); if(!visible.length){applyView();return;}
+      let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+      visible.forEach((l)=>{const b=layerBBoxBase(l);if(!b)return;x0=Math.min(x0,b[0][0]);y0=Math.min(y0,b[0][1]);x1=Math.max(x1,b[1][0]);y1=Math.max(y1,b[1][1]);});
+      if(!isFinite(x0))return;
+      const bw=Math.max(20,x1-x0),bh=Math.max(20,y1-y0);
+      const k=clamp(Math.min(width/bw,height/bh)*0.82,0.55,16);
+      const cx=(x0+x1)/2, cy=(y0+y1)/2;
+      const t=d3.zoomIdentity.translate(width/2-k*cx,height/2-k*cy).scale(k);
+      svg.transition().duration(motionMs(650)).call(zoom.transform,t);
+    }
+
+    function updateInsight(){
+      const ref=reference(), sel=selected();
+      let html="Add countries to begin comparing.";
+      if(ref&&sel&&ref.id!==sel.id){
+        const a=catalog.get(ref.sourceId).area,b=catalog.get(sel.sourceId).area;
+        const ratio=a/b;
+        html = ratio>=1
+          ? `<strong>${esc(ref.name)}</strong> is about <strong>${ratio.toFixed(2)}×</strong> the size of <strong>${esc(sel.name)}</strong>.`
+          : `<strong>${esc(sel.name)}</strong> is about <strong>${(1/ratio).toFixed(2)}×</strong> the size of <strong>${esc(ref.name)}</strong>.`;
+      }else if(state.layers.length){
+        const total=state.layers.reduce((s,l)=>s+catalog.get(l.sourceId).area,0);
+        html=`Reference: <strong>${esc(ref?ref.name:"—")}</strong> · Combined area: <strong>${fmtArea(total)}</strong>. Select another layer to compare.`;
+      }
+      $("#insight").innerHTML=html;
+    }
+    function updateLegend(){
+      $("#legend").innerHTML=state.layers.filter((l)=>l.visible).map((l)=>`<span class="legend-chip"><span class="legend-swatch" style="background:${l.color}"></span>${esc(l.name)}</span>`).join("");
+    }
+    function updateCoordPill(){
+      const s=selected();
+      $("#coordPill").textContent=s?`${s.lat.toFixed(1)}°, ${s.lon.toFixed(1)}°`:"Pan · zoom · drag shapes";
+      $("#modePill").textContent=state.settings.trueSize?"True-size mode":"Mercator paste mode";
+    }
+
+    function displayedLayers(){
+      const arr=[...state.layers];
+      if(state.sort==="name")arr.sort((a,b)=>a.name.localeCompare(b.name));
+      if(state.sort==="area")arr.sort((a,b)=>catalog.get(b.sourceId).area-catalog.get(a.sourceId).area);
+      return arr;
+    }
+    function renderLayerList(){
+      const list=$("#layerList");
+      $("#selectAll").checked=false; $("#selectAll").indeterminate=false;
+      if(!state.layers.length){list.innerHTML=`<div class="empty">No layers yet. Search above or tap a quick chip.</div>`;return;}
+      list.innerHTML=displayedLayers().map((l)=>{
+        const entry=catalog.get(l.sourceId);
+        const isRef=l.id===state.referenceId;
+        return `<div class="layer-item${l.id===state.selectedId?" selected":""}" data-id="${l.id}" draggable="${state.sort==="manual"}">
+          <input type="checkbox" class="bulk-check" data-id="${l.id}" aria-label="Select ${esc(l.name)} for bulk actions" />
+          <span class="handle" aria-hidden="true">⋮</span>
+          <button class="layer-select" data-id="${l.id}" style="background:none;border:0;text-align:left;padding:0;min-width:0">
+            <span class="layer-name"><span class="legend-swatch" style="display:inline-block;background:${l.color};margin-right:6px"></span>${esc(l.name)}${isRef?" · ref":""}</span>
+            <span class="layer-meta">${fmtArea(entry.area)} · ${l.lat.toFixed(1)}°, ${l.lon.toFixed(1)}°</span>
+          </button>
+          <span class="layer-actions">
+            <button class="mini ref-btn" data-id="${l.id}" title="Set as reference" aria-label="Set ${esc(l.name)} as reference">◎</button>
+            <button class="mini vis-btn" data-id="${l.id}" title="Toggle visibility" aria-label="Toggle ${esc(l.name)} visibility">${l.visible?"👁":"–"}</button>
+            <button class="mini del-btn" data-id="${l.id}" title="Delete layer" aria-label="Delete ${esc(l.name)}">✕</button>
+          </span>
+        </div>`;
+      }).join("");
+    }
+    function syncControls(){
+      const s=selected();const dis=!s;
+      ["latRange","lonRange","rotRange","opacityRange","strokeRange","colorInput"].forEach((id)=>{$("#"+id).disabled=dis;});
+      if(s){
+        $("#latRange").value=s.lat;$("#latOut").textContent=s.lat.toFixed(1)+"°";
+        $("#lonRange").value=s.lon;$("#lonOut").textContent=s.lon.toFixed(1)+"°";
+        $("#rotRange").value=s.rotation;$("#rotOut").textContent=Math.round(s.rotation)+"°";
+        $("#opacityRange").value=s.opacity;$("#opacityOut").textContent=Math.round(s.opacity)+"%";
+        $("#strokeRange").value=s.stroke;$("#strokeOut").textContent=s.stroke.toFixed(2)+"px";
+        $("#colorInput").value=s.color;
+      }
+      updateCoordPill();
+    }
+    function applySettingsToUI(){
+      document.documentElement.dataset.theme=state.settings.theme;
+      $("#trueSizeToggle").checked=state.settings.trueSize;
+      $("#labelsToggle").checked=state.settings.labels;
+      $("#gratToggle").checked=state.settings.graticule;
+      $("#themeSelect").value=state.settings.theme;
+      $("#unitSelect").value=state.settings.units;
+      $("#metaTitle").value=state.meta.title;
+      $("#metaDesc").value=state.meta.description;
+    }
+    function syncAll(){renderLayerList();syncControls();updateInsight();updateLegend();scheduleRender();}
+
+    function searchCatalog(q){
+      q=q.trim().toLowerCase(); if(!q)return [];
+      const out=[];
+      catalog.forEach((e)=>{
+        const hay=[e.name,...e.aliases].join(" ").toLowerCase();
+        if(hay.includes(q))out.push({e,score:hay.startsWith(q)?0:1});
+      });
+      return out.sort((a,b)=>a.score-b.score||a.e.name.localeCompare(b.e.name)).slice(0,8).map((x)=>x.e);
+    }
+    function renderSuggest(){
+      const box=$("#suggestList");
+      if(!suggestItems.length){box.classList.remove("open");$("#countrySearch").setAttribute("aria-expanded","false");return;}
+      box.innerHTML=suggestItems.map((e,i)=>`<button type="button" role="option" class="${i===suggestIndex?"active":""}" data-id="${e.id}"><span>${esc(e.name)}</span><small>${e.kind} · ${fmtArea(e.area)}</small></button>`).join("");
+      box.classList.add("open");$("#countrySearch").setAttribute("aria-expanded","true");
+    }
+    function addFromSearch(){
+      const q=$("#countrySearch").value;
+      const items=searchCatalog(q);
+      const pick=suggestItems[suggestIndex]||items[0];
+      if(pick){addLayer(pick.id);$("#countrySearch").value="";suggestItems=[];suggestIndex=-1;renderSuggest();fitLayers();}
+      else toast("No matching country found");
+    }
+
+    function loadPreset(name){
+      pushHistory();
+      state.layers=[];state.selectedId=null;state.referenceId=null;colorSeq=0;
+      const add=(id,opts)=>{const e=catalog.get(id);if(!e)return;const l={id:"l"+(++layerSeq),sourceId:id,name:e.name,color:opts.color||PALETTE[colorSeq++%PALETTE.length],opacity:opts.opacity??70,stroke:1.5,visible:true,lon:opts.lon??e.centroid[0],lat:opts.lat??e.centroid[1],rotation:opts.rotation??0,_cacheKey:null,_geom:null};state.layers.push(l);return l;};
+      if(name==="greenland-africa"){
+        const a=add("region:africa",{color:"#22d3ee",lon:18,lat:3,opacity:55});
+        const g=add("304",{color:"#f59e0b",lon:18,lat:12,rotation:-18,opacity:82});
+        state.referenceId=a.id;state.selectedId=g.id;
+        state.meta={title:"Greenland vs Africa — True Size Comparison",description:"Greenland moved toward the equator reveals how much smaller it is than Africa."};
+      }else if(name==="russia-usa"){
+        const r=add("643",{color:"#e879f9",lon:20,lat:25,opacity:65});
+        const u=add("840",{color:"#a3e635",lon:-20,lat:5,opacity:70});
+        state.referenceId=r.id;state.selectedId=u.id;
+        state.meta={title:"Russia vs United States — True Size Comparison",description:"Comparing Russia and the United States at similar latitudes."};
+      }else if(name==="india-brazil"){
+        const i=add("356",{color:"#f59e0b",lon:0,lat:10,opacity:75});
+        const b=add("076",{color:"#2dd4bf",lon:-35,lat:-8,opacity:65});
+        state.referenceId=b.id;state.selectedId=i.id;
+        state.meta={title:"India vs Brazil — True Size Comparison",description:"India and Brazil compared with distortion-aware geometry."};
+      }else if(name==="japan-uk"){
+        const j=add("392",{color:"#ff5a5f",lon:10,lat:35,opacity:80});
+        const u=add("826",{color:"#3b82f6",lon:-15,lat:52,opacity:80});
+        state.referenceId=u.id;state.selectedId=j.id;
+        state.meta={title:"Japan vs United Kingdom — True Size Comparison",description:"Island nations compared without Mercator exaggeration."};
+      }else{
+        const a=add("036",{color:"#a3e635",lon:-20,lat:-25,opacity:70});
+        const u=add("840",{color:"#22d3ee",lon:20,lat:10,opacity:65});
+        state.referenceId=u.id;state.selectedId=a.id;
+        state.meta={title:"Australia vs United States — True Size Comparison",description:"Australia and the United States at comparable latitudes."};
+      }
+      applySettingsToUI();syncAll();fitLayers();
+    }
+    function randomize(){
+      pushHistory();
+      const keys=Array.from(catalog.keys()).filter((k)=>k!=="region:africa");
+      state.layers=[];colorSeq=0;state.selectedId=null;state.referenceId=null;
+      const n=2+Math.floor(Math.random()*2);
+      for(let i=0;i<n && keys.length;i++){
+        const idx=Math.floor(Math.random()*keys.length);
+        const id=keys.splice(idx,1)[0];
+        const e=catalog.get(id);
+        const l={id:"l"+(++layerSeq),sourceId:id,name:e.name,color:PALETTE[colorSeq++%PALETTE.length],opacity:60+Math.floor(Math.random()*25),stroke:1.5,visible:true,lon:wrapLon(-120+Math.random()*240),lat:-45+Math.random()*90,rotation:Math.floor(Math.random()*360)-180,_cacheKey:null,_geom:null};
+        state.layers.push(l);
+      }
+      state.selectedId=state.layers[0].id;state.referenceId=state.layers[0].id;
+      state.meta.title="Random True Size Comparison";
+      applySettingsToUI();syncAll();fitLayers();
+    }
+
+    function savedViews(){try{return JSON.parse(localStorage.getItem("truescale.views")||"[]");}catch(e){return [];}}
+    function setSavedViews(v){try{localStorage.setItem("truescale.views",JSON.stringify(v));}catch(e){}}
+    function renderSaved(){
+      const views=savedViews();const el=$("#savedList");
+      if(!views.length){el.innerHTML=`<div class="empty">No saved comparisons yet.</div>`;return;}
+      el.innerHTML=views.map((v)=>`<div class="saved-item"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.name)}</span><span style="display:flex;gap:6px"><button class="btn btn-sm load-view" data-id="${v.id}">Load</button><button class="mini del-view" data-id="${v.id}" aria-label="Delete saved view">✕</button></span></div>`).join("");
+    }
+
+    function encodeState(){
+      const json=JSON.stringify(serialize());
+      return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+    }
+    function decodeState(hash){
+      try{let b=hash.replace(/-/g,"+").replace(/_/g,"/");while(b.length%4)b+="=";return JSON.parse(decodeURIComponent(escape(atob(b))));}catch(e){return null;}
+    }
+    function shareURL(){return location.href.split("#")[0]+"#c="+encodeState();}
+
+    function buildExportSVG(){
+      updateProjection();
+      const th=THEMES[state.settings.theme]||THEMES.ocean;
+      const w=width,h=height;
+      let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(state.meta.title)}">`;
+      s+=`<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${th.bg1}"/><stop offset="55%" stop-color="${th.bg2}"/><stop offset="100%" stop-color="${th.bg1}"/></linearGradient></defs>`;
+      s+=`<rect width="${w}" height="${h}" fill="url(#bg)"/>`;
+      if(state.settings.graticule)s+=`<path d="${path(graticule)}" fill="none" stroke="${th.grat}" stroke-opacity=".16" stroke-width=".7"/>`;
+      s+=`<path d="${path(landFeature)}" fill="${th.land}"/>`;
+      s+=`<path d="${path(borderMesh)}" fill="none" stroke="${th.border}" stroke-width=".6" stroke-opacity=".8"/>`;
+      state.layers.forEach((l)=>{
+        if(!l.visible)return;const e=catalog.get(l.sourceId);if(!e)return;
+        const anchor=projection([l.lon,l.lat]);let d,tr="";
+        if(state.settings.trueSize)d=path(transformedFeature(l));
+        else{d=path(e.feature);const o=projection(e.centroid);tr=` transform="translate(${anchor[0]-o[0]},${anchor[1]-o[1]}) rotate(${l.rotation},${anchor[0]},${anchor[1]})"`;}
+        if(!d)return;
+        s+=`<path d="${d}" fill="${l.color}" fill-opacity="${l.opacity/100}" stroke="${l.color}" stroke-width="${l.stroke}"${tr}/>`;
+        if(state.settings.labels){
+          const lx=clamp(anchor[0],70,w-70),ly=clamp(anchor[1],28,h-20);
+          s+=`<text x="${lx}" y="${ly}" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="700" font-size="14" fill="${th.text}" stroke="${th.bg1}" stroke-width="4" paint-order="stroke">${esc(l.name)}</text>`;
+          s+=`<text x="${lx}" y="${ly+16}" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="11" fill="${th.sub}" stroke="${th.bg1}" stroke-width="3" paint-order="stroke">${esc(fmtArea(e.area))}</text>`;
+        }
+      });
+      s+=`<text x="14" y="${h-14}" font-family="Inter,Arial,sans-serif" font-size="11" fill="${th.sub}">TrueScale Atlas · Natural Earth 110m · approximate boundary-derived areas</text></svg>`;
+      return s;
+    }
+    function exportSVG(){download(slug(state.meta.title)+".svg",new Blob([buildExportSVG()],{type:"image/svg+xml"}));toast("SVG exported");}
+    function exportPNG(){
+      const svgStr=buildExportSVG();const blob=new Blob([svgStr],{type:"image/svg+xml"});const url=URL.createObjectURL(blob);
+      const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(2,window.devicePixelRatio||1.5);
+        const canvas=document.createElement("canvas");canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
+        const ctx=canvas.getContext("2d");ctx.scale(scale,scale);ctx.drawImage(img,0,0,width,height);
+        canvas.toBlob((b)=>{if(b)download(slug(state.meta.title)+".png",b);URL.revokeObjectURL(url);toast("PNG exported");},"image/png");
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);toast("PNG export failed");};
+      img.src=url;
+    }
+    function exportJSON(){download(slug(state.meta.title)+".json",new Blob([JSON.stringify(serialize(),null,2)],{type:"application/json"}));toast("JSON exported");}
+    function exportHTML(){
+      const svgStr=buildExportSVG();
+      const rows=state.layers.map((l)=>{const e=catalog.get(l.sourceId);return `<tr><td>${esc(l.name)}</td><td>${fmtArea(e.area)}</td><td>${l.lat.toFixed(1)}°, ${l.lon.toFixed(1)}°</td><td>${Math.round(l.rotation)}°</td></tr>`;}).join("");
+      const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(state.meta.title)}</title><meta name="description" content="${esc(state.meta.description)}"><meta property="og:title" content="${esc(state.meta.title)}"><meta property="og:description" content="${esc(state.meta.description)}"><style>body{margin:0;font-family:Inter,Arial,sans-serif;background:#061826;color:#e8f1f8}main{max-width:1100px;margin:0 auto;padding:28px}h1{font-size:clamp(1.6rem,3vw,2.4rem)}p{color:#9db4c8}.map{border-radius:18px;overflow:hidden;border:1px solid #1c3b55}table{width:100%;border-collapse:collapse;margin-top:18px}td,th{border:1px solid #1c3b55;padding:10px;text-align:left}footer{margin-top:20px;color:#9db4c8;font-size:.85rem}</style></head><body><main><h1>${esc(state.meta.title)}</h1><p>${esc(state.meta.description)}</p><div class="map">${svgStr}</div><table><thead><tr><th>Layer</th><th>Approx. area</th><th>Position</th><th>Rotation</th></tr></thead><tbody>${rows}</tbody></table><footer>Generated by TrueScale Atlas. Boundaries: Natural Earth 1:110m public-domain data. Areas are approximate and for educational comparison.</footer></main></body></html>`;
+      download(slug(state.meta.title)+".html",new Blob([html],{type:"text/html"}));toast("Standalone HTML page exported");
+    }
+
+    function bindLiveControl(id, apply){
+      const el=$("#"+id);
+      let pendingSnapshot=null;
+      const arm=()=>{ if(pendingSnapshot===null) pendingSnapshot=JSON.stringify(serialize()); };
+      const reset=()=>{ pendingSnapshot=null; };
+      el.addEventListener("pointerdown",arm);
+      el.addEventListener("keydown",(e)=>{ if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Home","End","PageUp","PageDown"].includes(e.key)) arm(); });
+      el.addEventListener("input",(e)=>{
+        const s=selected(); if(!s)return;
+        if(pendingSnapshot!==null){pushSnapshot(pendingSnapshot);pendingSnapshot=null;}
+        apply(s,e.target); s._cacheKey=null; syncControls(); scheduleRender();
+      });
+      el.addEventListener("change",reset);
+      el.addEventListener("blur",reset);
+    }
+
+    function bindUI(){
+      if(uiBound)return; uiBound=true;
+      $("#heroPreset").onclick=()=>{loadPreset("greenland-africa");$("#explorer").scrollIntoView({behavior:"smooth"});};
+      $("#shortcutsBtn").onclick=()=>$("#shortcutsDialog").showModal();
+      $("#zoomIn").onclick=()=>svg.transition().duration(motionMs(220)).call(zoom.scaleBy,1.35);
+      $("#zoomOut").onclick=()=>svg.transition().duration(motionMs(220)).call(zoom.scaleBy,1/1.35);
+      $("#fitBtn").onclick=fitLayers;
+      $("#resetViewBtn").onclick=()=>{pushHistory();state.view={k:1,x:0,y:0};applyView();};
+      $("#addBtn").onclick=addFromSearch;
+      $("#countrySearch").addEventListener("input",(e)=>{suggestItems=searchCatalog(e.target.value);suggestIndex=-1;renderSuggest();});
+      $("#countrySearch").addEventListener("keydown",(e)=>{
+        if(e.key==="ArrowDown"){e.preventDefault();suggestIndex=Math.min(suggestItems.length-1,suggestIndex+1);renderSuggest();}
+        else if(e.key==="ArrowUp"){e.preventDefault();suggestIndex=Math.max(0,suggestIndex-1);renderSuggest();}
+        else if(e.key==="Enter"){e.preventDefault();addFromSearch();}
+        else if(e.key==="Escape"){suggestItems=[];renderSuggest();}
+      });
+      $("#suggestList").addEventListener("click",(e)=>{const b=e.target.closest("button[data-id]");if(b){addLayer(b.dataset.id);$("#countrySearch").value="";suggestItems=[];renderSuggest();fitLayers();}});
+      document.addEventListener("click",(e)=>{if(!e.target.closest(".search-row")){suggestItems=[];renderSuggest();}});
+
+      const quick=["304","region:africa","840","356","076","036","392","364"];
+      $("#quickChips").innerHTML=quick.map((id)=>`<button class="chip" type="button" data-add="${id}">${esc(catalog.get(id).name)}</button>`).join("");
+      $("#quickChips").addEventListener("click",(e)=>{const b=e.target.closest("[data-add]");if(b){addLayer(b.dataset.add);fitLayers();}});
+      const presets=[["greenland-africa","Greenland vs Africa"],["russia-usa","Russia vs USA"],["india-brazil","India vs Brazil"],["japan-uk","Japan vs UK"],["australia-usa","Australia vs USA"]];
+      $("#presetChips").innerHTML=presets.map(([id,label])=>`<button class="chip" type="button" data-preset="${id}">${label}</button>`).join("");
+      $("#presetChips").addEventListener("click",(e)=>{const b=e.target.closest("[data-preset]");if(b)loadPreset(b.dataset.preset);});
+
+      $("#layerList").addEventListener("click",(e)=>{
+        const sel=e.target.closest(".layer-select"),ref=e.target.closest(".ref-btn"),vis=e.target.closest(".vis-btn"),del=e.target.closest(".del-btn");
+        if(sel){state.selectedId=sel.dataset.id;syncAll();}
+        if(ref){pushHistory();state.referenceId=ref.dataset.id;syncAll();}
+        if(vis){const l=state.layers.find((x)=>x.id===vis.dataset.id);if(l){pushHistory();l.visible=!l.visible;syncAll();}}
+        if(del)removeLayer(del.dataset.id);
+      });
+      $("#layerList").addEventListener("change",(e)=>{
+        if(e.target.classList.contains("bulk-check")){
+          const checks=$$(".bulk-check");
+          $("#selectAll").checked=checks.length>0 && checks.every((c)=>c.checked);
+          $("#selectAll").indeterminate=checks.some((c)=>c.checked) && !$("#selectAll").checked;
+        }
+      });
+      $("#selectAll").addEventListener("change",(e)=>{$$(".bulk-check").forEach((c)=>c.checked=e.target.checked);$("#selectAll").indeterminate=false;});
+      $("#bulkDelete").onclick=()=>{
+        const ids=$$(".bulk-check:checked").map((c)=>c.dataset.id);if(!ids.length){toast("No layers selected");return;}
+        pushHistory();state.layers=state.layers.filter((l)=>!ids.includes(l.id));
+        if(!state.layers.find((l)=>l.id===state.selectedId))state.selectedId=state.layers[0]?.id||null;
+        if(!state.layers.find((l)=>l.id===state.referenceId))state.referenceId=state.layers[0]?.id||null;
+        syncAll();toast(`Deleted ${ids.length} layer(s)`,"Undo",undo);
+      };
+      $("#sortLayers").addEventListener("change",(e)=>{state.sort=e.target.value;renderLayerList();});
+      $("#layerList").addEventListener("dragstart",(e)=>{const item=e.target.closest(".layer-item");if(item){dragLayerId=item.dataset.id;e.dataTransfer.effectAllowed="move";}});
+      $("#layerList").addEventListener("dragend",()=>{dragLayerId=null;});
+      $("#layerList").addEventListener("dragover",(e)=>{e.preventDefault();});
+      $("#layerList").addEventListener("drop",(e)=>{
+        e.preventDefault();const item=e.target.closest(".layer-item");if(!item||!dragLayerId||state.sort!=="manual")return;
+        const from=state.layers.findIndex((l)=>l.id===dragLayerId),to=state.layers.findIndex((l)=>l.id===item.dataset.id);
+        if(from<0||to<0||from===to)return;pushHistory();const [m]=state.layers.splice(from,1);state.layers.splice(to,0,m);syncAll();
+      });
+
+      bindLiveControl("latRange",(s,t)=>s.lat=clamp(+t.value,-85,85));
+      bindLiveControl("lonRange",(s,t)=>s.lon=wrapLon(+t.value));
+      bindLiveControl("rotRange",(s,t)=>s.rotation=+t.value);
+      bindLiveControl("opacityRange",(s,t)=>s.opacity=+t.value);
+      bindLiveControl("strokeRange",(s,t)=>s.stroke=+t.value);
+      bindLiveControl("colorInput",(s,t)=>{s.color=t.value;renderLayerList();});
+      $("#unitSelect").addEventListener("change",(e)=>{pushHistory();state.settings.units=e.target.value;syncAll();});
+      $("#trueSizeToggle").addEventListener("change",(e)=>{pushHistory();state.settings.trueSize=e.target.checked;state.layers.forEach((l)=>l._cacheKey=null);syncAll();});
+      $("#labelsToggle").addEventListener("change",(e)=>{pushHistory();state.settings.labels=e.target.checked;scheduleRender();});
+      $("#gratToggle").addEventListener("change",(e)=>{pushHistory();state.settings.graticule=e.target.checked;scheduleRender();});
+      $("#themeSelect").addEventListener("change",(e)=>{pushHistory();state.settings.theme=e.target.value;document.documentElement.dataset.theme=e.target.value;scheduleRender();});
+      $("#randomBtn").onclick=randomize;
+      $("#resetBtn").onclick=()=>loadPreset("greenland-africa");
+      $("#undoBtn").onclick=undo;$("#undoBtn").disabled=true;
+      $("#metaTitle").addEventListener("input",(e)=>state.meta.title=e.target.value);
+      $("#metaDesc").addEventListener("input",(e)=>state.meta.description=e.target.value);
+
+      $("#saveBtn").onclick=()=>{
+        const name=$("#saveName").value.trim()||state.meta.title||"Untitled comparison";
+        const views=savedViews();views.unshift({id:"v"+Date.now(),name,date:new Date().toISOString(),state:serialize()});
+        setSavedViews(views.slice(0,20));$("#saveName").value="";renderSaved();toast("Comparison saved locally");
+      };
+      $("#savedList").addEventListener("click",(e)=>{
+        const load=e.target.closest(".load-view"),del=e.target.closest(".del-view");
+        const views=savedViews();
+        if(load){const v=views.find((x)=>x.id===load.dataset.id);if(v){pushHistory();restore(v.state,true);toast("Loaded “"+v.name+"”");}}
+        if(del){setSavedViews(views.filter((x)=>x.id!==del.dataset.id));renderSaved();toast("Saved view deleted");}
+      });
+
+      $("#shareBtn").onclick=async()=>{const url=shareURL();try{history.replaceState(null,"","#c="+encodeState());}catch(_){}toast(await copyText(url)?"Share link copied":"Copy failed");};
+      $("#pngBtn").onclick=exportPNG;$("#svgBtn").onclick=exportSVG;$("#jsonBtn").onclick=exportJSON;$("#htmlBtn").onclick=exportHTML;
+      $("#embedBtn").onclick=async()=>{const snippet=`<iframe src="${shareURL()}" width="100%" height="680" style="border:1px solid #1c3b55;border-radius:16px" title="${esc(state.meta.title)}" loading="lazy"></iframe>`;toast(await copyText(snippet)?"Embed code copied":"Copy failed");};
+
+      document.addEventListener("keydown",(e)=>{
+        if(navOpen)return;
+        if($("#shortcutsDialog").open)return;
+        const tag=(e.target.tagName||"").toLowerCase();
+        if(tag==="input"||tag==="textarea"||tag==="select")return;
+        if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();undo();return;}
+        if(e.key==="Escape"){state.selectedId=null;syncAll();return;}
+        const s=selected(); if(!s)return;
+        if(e.key==="Delete"||e.key==="Backspace"){e.preventDefault();removeLayer(s.id);return;}
+        if(e.key==="+"||e.key==="="){e.preventDefault();svg.call(zoom.scaleBy,1.2);return;}
+        if(e.key==="-"||e.key==="_"){e.preventDefault();svg.call(zoom.scaleBy,1/1.2);return;}
+        const step=e.shiftKey?5:1;
+        const moves={
+          ArrowUp:()=>s.lat=clamp(s.lat+step,-85,85),
+          ArrowDown:()=>s.lat=clamp(s.lat-step,-85,85),
+          ArrowLeft:()=>s.lon=wrapLon(s.lon-step),
+          ArrowRight:()=>s.lon=wrapLon(s.lon+step),
+          r:()=>s.rotation=wrapLon(s.rotation+5)
+        };
+        const fn=moves[e.key]||moves[e.key.toLowerCase()];
+        if(fn){e.preventDefault();pushHistory();fn();s._cacheKey=null;syncAll();}
+      });
+
+      const navLinks=$$(".nav a[data-nav]");
+      const sections=["method","faq"].map((id)=>document.getElementById(id)).filter(Boolean);
+      const io=new IntersectionObserver((entries)=>{
+        entries.forEach((en)=>{
+          if(en.isIntersecting){
+            navLinks.forEach((a)=>{
+              if(a.dataset.nav==="method"||a.dataset.nav==="faq"){
+                a.setAttribute("aria-current",a.dataset.nav===en.target.id?"true":"false");
+              }
+            });
+          }
+        });
+      },{rootMargin:"-40% 0px -55% 0px"});
+      sections.forEach((s)=>io.observe(s));
+      if(resizeObserver)resizeObserver.disconnect();
+      resizeObserver=new ResizeObserver(resize);
+      resizeObserver.observe(holder);
+    }
+
+    async function loadAtlas(){
+      const cacheKey="truescale.atlas.v1";
+      try{
+        const cached=localStorage.getItem(cacheKey);
+        if(cached){const parsed=JSON.parse(cached);if(parsed&&parsed.objects&&parsed.objects.countries){atlas=parsed;return;}}
+      }catch(e){}
+      const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),15000);
+      try{
+        const res=await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json",{signal:controller.signal});
+        if(!res.ok)throw new Error("HTTP "+res.status);
+        atlas=await res.json();
+        try{localStorage.setItem(cacheKey,JSON.stringify(atlas));}catch(e){}
+      }finally{clearTimeout(timer);}
+    }
+    function showError(err){
+      loadingEl.innerHTML=`<div class="error-box"><h3 style="margin-top:0">Could not load map data</h3><p style="color:var(--muted)">${esc(err.message||"Network error")}. Check your connection and retry.</p><button class="btn btn-primary" id="retryBtn">Retry</button></div>`;
+      $("#retryBtn").onclick=()=>{loadingEl.innerHTML=`<div style="text-align:center"><div class="loader" style="margin:0 auto 14px"></div><p style="margin:0;color:var(--muted)">Loading open world boundaries…</p></div>`;init();};
+    }
+
+    async function init(){
+      try{
+        if(typeof d3==="undefined"||typeof topojson==="undefined")throw new Error("Required libraries failed to load");
+        await loadAtlas();
+        landFeature=topojson.feature(atlas,atlas.objects.land||atlas.objects.countries);
+        borderMesh=topojson.mesh(atlas,atlas.objects.countries,(a,b)=>a!==b);
+        buildCatalog();bindUI();resize();renderSaved();
+        const hash=location.hash.match(/#c=([^&]+)/);
+        if(hash){const data=decodeState(hash[1]);if(data)restore(data,true);else loadPreset("greenland-africa");}
+        else loadPreset("greenland-africa");
+        loadingEl.style.display="none";
+        toast("Tip: drag a country toward the equator to reveal its true size.");
+      }catch(err){showError(err);}
+    }
+    bindMobileNav();
+    init();
+  })();
+  </script>
+</body>
+</html>
