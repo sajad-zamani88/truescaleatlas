@@ -147,10 +147,10 @@ footer a{color:var(--m)}
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="brand" href="/"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#04121f" stroke-width="2"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#04121f" stroke-width="1.6"/></svg></span>TrueScale Atlas</a><nav><a href="compare.html">Comparisons</a><a href="method.html">Method</a><a href="about.html">About</a><a href="contact.html">Contact</a><a class="cta" href="index.html">Start comparing</a></nav></div></header>
+<header><div class="wrap"><a class="brand" href="/"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#04121f" stroke-width="2"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#04121f" stroke-width="1.6"/></svg></span>TrueScale Atlas</a><nav><a href="compare.html">Comparisons</a><a href="method.html">Method</a><a href="about.html">About</a><a href="contact.html">Contact</a><a class="cta" href="https://truescaleatlas.com">Start comparing</a></nav></div></header>
 
 <main class="wrap">
-<p class="crumb"><a href="index.html">Home</a> &rsaquo; Method and Accuracy</p>
+<p class="crumb"><a href="https://truescaleatlas.com">Home</a> &rsaquo; Method and Accuracy</p>
 <h1>Method and Accuracy</h1>
 <p>Every number on this site comes from two computations: the area of a polygon on a sphere, and the amount by which the Mercator projection inflates that area at a given latitude. Both are published here so you can reproduce them.</p><h2>1. Area on a sphere</h2><p>Each boundary ring is integrated with the spherical excess formula. For consecutive vertices with longitudes &lambda; and latitudes &phi;:</p><pre>sum += (&lambda;2 - &lambda;1) * (2 + sin &phi;1 + sin &phi;2)
 ring_area_steradians = |sum| / 2
