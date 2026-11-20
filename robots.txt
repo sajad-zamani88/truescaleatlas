@@ -6,8 +6,7 @@
 
 # ---- All crawlers (Google, Bing, DuckDuckGo, ...) ----
 User-agent: *
-Disallow: /studio.html
-Disallow: /*.json$
+
 Allow: /
 
 # ---- AI answer engines & assistants (GEO: explicitly allowed) ----
@@ -33,7 +32,7 @@ User-agent: Bytespider
 User-agent: DuckAssistBot
 User-agent: YouBot
 User-agent: MistralAI-User
-Disallow: /*.json$
+
 Allow: /
 
 # ---- Sitemap ----
