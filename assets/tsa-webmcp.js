@@ -1,20 +1,29 @@
 /* ============================================================
    TrueScale Atlas — WebMCP engine (shared, data-driven)
-   File: /assets/tsa-webmcp.js  ·  v1.0.0
+   Hosted at: https://truescaleatlas.com/assets/tsa-webmcp.js
+   Version: 1.1.0
    Loaded by each comparison page via:
-     <script type="module" src="/assets/tsa-webmcp.js?v=1"></script>
-   Per-page data: window.__TSA_WEBMCP_DATA__ (head injection).
+     <script type="module" src="https://truescaleatlas.com/assets/tsa-webmcp.js"></script>
+   Per-page data: window.__TSA_WEBMCP_DATA__ (Head injection).
    Runtime: native document.modelContext (Chrome 149+),
    fallback navigator.modelContext, else MCP-B global runtime
    (polyfill + Rook/MCP-B extension transport) via jsDelivr.
    ============================================================ */
 (async () => {
   "use strict";
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const D = window.__TSA_WEBMCP_DATA__;
   if (!D || window.__TSA_WEBMCP_LOADED__) return;
   window.__TSA_WEBMCP_LOADED__ = true;
   const log = (...a) => { if (D.debug) console.info("[TSA-WebMCP]", ...a); };
+
+  const P = D.page || {};
+  const M = D.metadata || {};
+  const C = D.comparison || {};
+  const regions = C.regions || {};
+  const keys = Object.keys(regions);
+  if (!C.subject || !keys.length) { log("DATA.comparison incomplete; tools not registered."); return; }
+  const primary = regions[keys[0]].label;
 
   let mc = document.modelContext ?? navigator.modelContext ?? null;
   let runtime = mc ? "native" : null;
@@ -33,16 +42,12 @@
   window.addEventListener("pagehide", () => ctrl.abort(), { once: true });
   const reg = (t) => mc.registerTool(t, { signal: ctrl.signal })
     .catch((e) => console.warn("[TSA-WebMCP] register failed:", t.name, e));
-
-  const C = D.comparison || {};
-  const regions = C.regions || {};
-  const keys = Object.keys(regions);
   const READ = { readOnlyHint: true, untrustedContentHint: false, consequentialHint: false };
 
-  // 1) Structured size comparison (data-driven from DATA.regions)
+  // 1) Structured size comparison — correct summary + directional ratio + metadata
   await reg({
     name: "get_size_comparison",
-    title: C.subject + " vs Europe — true size",
+    title: C.subject + " vs " + primary + " — true size",
     description: "Compare the true land area of the " + C.subject + " against " + keys.map((k) => regions[k].label).join(", ") + ". Returns areas, ratio, difference, population and density. Use for any 'is X bigger than Y' question this page covers.",
     inputSchema: {
       type: "object",
@@ -50,7 +55,14 @@
     },
     outputSchema: {
       type: "object",
-      properties: { subject: { type: "string" }, region: { type: "string" }, subjectAreaKm2: { type: "number" }, regionAreaKm2: { type: "number" }, ratio: { type: "number" }, differenceKm2: { type: "number" }, differencePercent: { type: "number" }, summary: { type: "string" } }
+      properties: {
+        subject: { type: "string" }, region: { type: "string" },
+        subjectAreaKm2: { type: "number" }, regionAreaKm2: { type: "number" },
+        ratio: { type: "number", description: "Larger area divided by smaller area. Always >= 1." },
+        regionToSubjectRatio: { type: "number", description: "Region area divided by subject area. May be < 1." },
+        differenceKm2: { type: "number" }, differencePercent: { type: "number" },
+        summary: { type: "string" }
+      }
     },
     annotations: READ,
     execute: async ({ region } = {}) => {
@@ -59,6 +71,7 @@
       if (!r) return { error: "Unknown region. Use one of: " + keys.join(", ") };
       const sA = C.subjectAreaKm2, rA = r.areaKm2;
       const larger = rA >= sA ? r.label : C.subject;
+      const smaller = rA >= sA ? C.subject : r.label;
       const ratio = Math.max(sA, rA) / Math.min(sA, rA);
       const diff = rA - sA;
       const pct = (diff / sA) * 100;
@@ -66,12 +79,17 @@
         subject: C.subject, region: r.label,
         subjectAreaKm2: sA, regionAreaKm2: rA,
         subjectAreaSqMi: C.subjectAreaSqMi ?? null, regionAreaSqMi: r.areaSqMi ?? null,
-        larger: larger, ratio: +ratio.toFixed(3),
+        larger: larger,
+        ratio: +ratio.toFixed(3),
+        regionToSubjectRatio: +(rA / sA).toFixed(3),
         differenceKm2: diff, differencePercent: +pct.toFixed(1),
         subjectPopulation: C.subjectPopulation ?? null, regionPopulation: r.population ?? null,
         subjectDensityPerSqMi: C.subjectDensityPerSqMi ?? null, regionDensityPerSqMi: r.densityPerSqMi ?? null,
-        summary: larger + " is larger. " + r.label + " / " + C.subject + " area ratio = " + ratio.toFixed(2) + " (" + (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%).",
-        source: D.page.canonical
+        summary: larger + " is about " + ratio.toFixed(2) + "× the area of " + smaller + ". Difference vs " + C.subject + ": " + (diff >= 0 ? "+" : "") + diff.toLocaleString("en-US") + " km² (" + (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%).",
+        areaDefinition: M.areaDefinition ?? null,
+        populationReferenceYear: M.populationReferenceYear ?? null,
+        dataLastVerified: M.lastVerified ?? null,
+        source: P.canonical
       };
     }
   });
@@ -106,13 +124,24 @@
   });
 
   // 3) FAQ
-  await reg({ name: "get_article_faq", title: "Article FAQ", description: "Return this page's questions and answers about " + C.subject + " vs Europe size.", inputSchema: { type: "object", properties: {} }, annotations: READ, execute: async () => ({ faq: D.faq || [], source: D.page.canonical }) });
+  await reg({ name: "get_article_faq", title: "Article FAQ", description: "Return this page's questions and answers about " + C.subject + " vs " + primary + " size.", inputSchema: { type: "object", properties: {} }, annotations: READ, execute: async () => ({ faq: D.faq || [], source: P.canonical }) });
 
-  // 4) Sources
-  await reg({ name: "get_article_sources", title: "Article sources", description: "Return the cited data sources (publisher + URL) behind the size figures on this page.", inputSchema: { type: "object", properties: {} }, annotations: READ, execute: async () => ({ sources: D.sources || [], note: D.page.dataNote || null }) });
+  // 4) Sources + methodology metadata
+  await reg({ name: "get_article_sources", title: "Article sources & methodology", description: "Return the cited data sources (publisher + URL) and the methodology metadata behind the figures on this page.", inputSchema: { type: "object", properties: {} }, annotations: READ, execute: async () => ({
+    sources: D.sources || [],
+    note: P.dataNote ?? null,
+    figuresSources: M.figuresSources ?? null,
+    geometrySource: M.geometrySource ?? null,
+    areaUnit: M.areaUnit ?? "km2",
+    areaDefinition: M.areaDefinition ?? null,
+    methodology: M.methodology ?? null,
+    methodologyUrl: M.methodologyUrl ?? null,
+    dataVersion: M.dataVersion ?? null,
+    lastVerified: M.lastVerified ?? null
+  }) });
 
   // 5) Citation
-  await reg({ name: "get_citation", title: "Cite this article", description: "Return a ready-to-use citation and the canonical URL for this article.", inputSchema: { type: "object", properties: {} }, annotations: READ, execute: async () => ({ citation: D.page.citation, canonical: D.page.canonical, author: D.page.author, published: D.page.published, modified: D.page.modified }) });
+  await reg({ name: "get_citation", title: "Cite this article", description: "Return a ready-to-use citation and the canonical URL for this article.", inputSchema: { type: "object", properties: {} }, annotations: READ, execute: async () => ({ citation: P.citation, canonical: P.canonical, author: P.author, published: P.published, modified: P.modified, dataVersion: M.dataVersion ?? null, lastVerified: M.lastVerified ?? null }) });
 
   // 6) Navigation action — open the interactive map
   await reg({
@@ -121,19 +150,16 @@
     description: "Navigate the current tab to the TrueScale Atlas interactive map where the user can drag countries across the globe and watch Mercator distortion disappear. Use when the user wants to see or try the comparison visually.",
     inputSchema: { type: "object", properties: {} },
     annotations: { readOnlyHint: false, untrustedContentHint: false, consequentialHint: false },
-    execute: async () => { const url = D.page.mapUrl || D.page.baseUrl || "https://truescaleatlas.com/"; location.assign(url); return "Opening the interactive true-size map: " + url; }
+    execute: async () => { const url = P.mapUrl || P.baseUrl || "https://truescaleatlas.com/"; location.assign(url); return "Opening the interactive true-size map: " + url; }
   });
 
   if (typeof mc.addEventListener === "function") mc.addEventListener("toolactivated", (e) => log("tool activated:", e.toolName));
 
-  // Debug / test handle (console or extension inspector)
   window.__TSA_WEBMCP__ = {
-    version: VERSION,
-    runtime: runtime,
-    data: D,
+    version: VERSION, runtime: runtime, data: D,
     unregister: () => ctrl.abort(),
     test: async () => {
-      const latA = (regions[keys[0]] && regions[keys[0]].meanLat) ?? 48;
+      const latA = regions[keys[0]].meanLat ?? 48;
       const latB = C.subjectMeanLat ?? 39;
       const tools = await mc.getTools();
       const out = [];
